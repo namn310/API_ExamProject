@@ -1,5 +1,5 @@
 <?php
-include_once "Connection/Connection.php";
+include_once __DIR__ . "/../Connection/Connection.php";
 class BaseModel
 {
     protected $table;
@@ -9,6 +9,12 @@ class BaseModel
         $this->table = $table;
         $conn = Connection::GetConnect();
         $this->conn = $conn;
+    }
+    // lấy dữ liệu
+    public function index()
+    {
+        $query = $this->conn->query("select * from $this->table");
+        return $query->fetchAll();
     }
     // create dữ liệu
     public function create($data)
