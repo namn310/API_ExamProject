@@ -9,7 +9,10 @@
 
     $QuestionModel = new QuestionModal();
     $id = isset($_GET['id']) ? $_GET['id'] : die();
-    $data = $QuestionModel->delete($id);
-    echo json_encode($data);
+    if($QuestionModel->delete($id)){
+        echo json_encode(array('message','Success'));
+    }else{
+        echo json_encode(array('message','Error'));
+    }
 
 ?>
