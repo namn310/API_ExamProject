@@ -1,5 +1,5 @@
 <?php
-include_once __DIR__. '/../Models/BaseModel.php';
+include_once __DIR__ . '/../Models/BaseModel.php';
 class ExamController
 {
     private $ExamModel;
@@ -14,6 +14,11 @@ class ExamController
         $result = $this->ExamModel->index();
         echo json_encode(['data' => $result]);
     }
+    public function detail($id)
+    {
+        $result = $this->ExamModel->read($id);
+        echo json_encode(['data' => $result]);
+    }
     public function create()
     {
         $data = json_decode(file_get_contents("php://input"), true);
@@ -23,10 +28,8 @@ class ExamController
             echo json_encode(['message' => "Tạo mới bài thi thành công !"]);
         }
     }
-    public function getExam()
+    public function getExam($id)
     {
-
-        $id = isset($_GET['id']) ? $_GET['id'] : 0;
         if ($id == 0) {
             echo json_encode(['message' => 'Dữ liệu bài thi không tồn tại !']);
         } else {
@@ -38,24 +41,22 @@ class ExamController
             echo json_encode(['message' => 'Lấy thông tin bài thi thành công']);
         }
     }
-    public function update()
+    public function update($id)
     {
         $data = json_decode(file_get_contents("php://input"), true);
-        $id = isset($_GET['id']) ? $_GET['id'] : 0;
         if ($id == 0) {
             echo json_encode(['message' => 'Dữ liệu bài thi không tồn tại !']);
         } else {
             if ($this->ExamModel->update($data, $id) == false) {
-                echo json_encode(['message' => 'Bài thi không tồn tại !']);
+                echo json_encode(['message' => 'Cập nhật bài thi không thành công !']);
             } else {
                 echo json_encode(['message' => 'Cập nhật thông tin bài thi thành công !']);
             }
         }
     }
 
-    public function delete()
+    public function delete($id)
     {
-        $id = isset($_GET['id']) ? $_GET['id'] : 0;
         if ($id == 0) {
             echo json_encode(['message' => 'Dữ liệu bài thi không tồn tại !']);
         } else {

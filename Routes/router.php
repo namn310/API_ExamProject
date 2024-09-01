@@ -2,23 +2,47 @@
 header('Access-Control-Allow-Origin: *');
 header('Content-Type: application/json');
 
-include_once  __DIR__ . '/../Controllers/ExamController.php';
+include_once  __DIR__ . '/../Controllers/QuestionController.php';
 $ExamController = new ExamController();
 $methodRequest = $_SERVER['REQUEST_METHOD'];
 $UriRequest = $_SERVER['REQUEST_URI'];
 // lấy URI chính
 $UriRequest = strtok($UriRequest, '?');
+// định tuyến router cho API
 $routers = [
+    // lấy danh sách câu hỏi
     'GET' => [
-        '/exam' => function () use ($ExamController) {
+        '/questions' => function () use ($ExamController) {
             $ExamController->index();
         },
+
     ],
+    // Lấy thông tin chi tiết câu hỏi
     'GET' => [
-        '/nam' => function () use ($ExamController) {
-            $ExamController->index();
+        '/questions/detail/(\d+)' => function ($id) use ($ExamController) {
+            $ExamController->detail($id);
         },
     ],
+    // \d+ regular expression số nguyên
+    // xóa danh sách câu hỏi
+    'DELETE' => [
+        '/questions/delete/(\d+)' => function ($id) use ($ExamController) {
+            $ExamController->delete($id);
+        }
+    ],
+    // Cập nhật câu hỏi
+    'PUT' => [
+        '/questions/update/(\d+)' => function ($id) use ($ExamController) {
+            $ExamController->update($id);
+        }
+    ],
+    // Tạo mới câu hỏi
+    'POST' => [
+        '/questions/create' => function () use ($ExamController) {
+            $ExamController->create();
+        }
+    ]
+
 ];
 function handleRoute($routers, $methodRequest, $UriRequest)
 {

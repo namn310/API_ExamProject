@@ -19,6 +19,7 @@ class BaseModel
     // create dữ liệu
     public function create($data)
     {
+        // $data = json_decode(file_get_contents("php://input"), true);
         // lấy tên cột từ data;
         $columns = implode(",", array_keys($data));
         // prepare giá trị truyền vào sql
@@ -42,7 +43,7 @@ class BaseModel
         } catch (Throwable) {
             return null;
         }
-        return $query->fetchAll();
+        return $query->fetch();
     }
     // delete data
     public function delete($id)
@@ -68,7 +69,7 @@ class BaseModel
         // ví dụ chuỗi string sẽ có dạng name=:name,....
         // echo $setClause;
         try {
-            $query = $this->conn->prepare("update vouchers set $setClause where id=:id");
+            $query = $this->conn->prepare("update $this->table set $setClause where id=:id");
             $arrayId = ['id' => $id];
             //merge mảng để execute query
             $arrayData = array_merge_recursive($data, $arrayId);
