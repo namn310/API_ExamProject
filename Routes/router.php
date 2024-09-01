@@ -54,6 +54,12 @@ $routers = [
         },
 
     ],
+    'POST' => [
+        '/exams/create' => function () use ($ExamsController) {
+            $ExamsController->create();
+        },
+
+    ],
     // User
     // Lấy danh sách người dùng
     'GET' => [
