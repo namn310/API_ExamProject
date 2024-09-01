@@ -1,6 +1,6 @@
 <?php
 include_once __DIR__ . '/../Models/BaseModel.php';
-class QuestionsController
+class ExamsController
 {
     private $ExamModel;
     private $table;

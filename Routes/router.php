@@ -3,7 +3,10 @@ header('Access-Control-Allow-Origin: *');
 header('Content-Type: application/json');
 
 include_once  __DIR__ . '/../Controllers/QuestionController.php';
+include_once  __DIR__ . '/../Controllers/ExamController.php';
+
 $QuestionsController = new QuestionsController();
+$ExamsController = new ExamsController();
 
 $methodRequest = $_SERVER['REQUEST_METHOD'];
 $UriRequest = $_SERVER['REQUEST_URI'];
@@ -42,7 +45,13 @@ $routers = [
         '/questions/create' => function () use ($QuestionsController) {
             $QuestionsController->create();
         }
-    ]
+    ],
+    'GET' => [
+        '/exams' => function () use ($ExamsController) {
+            $ExamsController->index();
+        },
+
+    ],
 
 ];
 function handleRoute($routers, $methodRequest, $UriRequest)
