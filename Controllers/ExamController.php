@@ -6,7 +6,7 @@ class ExamsController
     private $table;
     public function __construct()
     {
-        $this->table = 'questions';
+        $this->table = 'exams';
         $this->ExamModel = new BaseModel($this->table);
     }
     public function index()

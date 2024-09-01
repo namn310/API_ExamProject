@@ -52,6 +52,12 @@ $routers = [
         },
 
     ],
+    'POST' => [
+        '/exams/create' => function () use ($ExamsController) {
+            $ExamsController->create();
+        },
+
+    ],
 
 ];
 function handleRoute($routers, $methodRequest, $UriRequest)
