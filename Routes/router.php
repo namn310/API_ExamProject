@@ -4,9 +4,11 @@ header('Content-Type: application/json');
 
 include_once  __DIR__ . '/../Controllers/QuestionController.php';
 include_once  __DIR__ . '/../Controllers/ExamController.php';
+include_once  __DIR__ . '/../Controllers/UserController.php';
 
 $QuestionsController = new QuestionsController();
 $ExamsController = new ExamsController();
+$UserController = new UserController();
 
 $methodRequest = $_SERVER['REQUEST_METHOD'];
 $UriRequest = $_SERVER['REQUEST_URI'];
@@ -52,7 +54,37 @@ $routers = [
         },
 
     ],
-
+    // User
+    // Lấy danh sách người dùng
+    'GET' => [
+        '/users' => function () use ($UserController) {
+            $UserController->index();
+        },
+    ],
+    // Lấy thông tin chi tiết người dùng
+    'GET' => [
+        '/users/detail/(\d+)' => function ($id) use ($UserController) {
+            $UserController->detail($id);
+        },
+    ],
+    // Xóa thông tin người dùng
+    'DELETE' => [
+        '/users/delete/(\d+)' => function ($id) use ($UserController) {
+            $UserController->delete($id);
+        }
+    ],
+    // Cập nhật thông tin người dùng
+    'PUT' => [
+        '/users/update/(\d+)' => function ($id) use ($UserController) {
+            $UserController->update($id);
+        }
+    ],
+    // Tạo mới thông tin người dùng
+    'POST' => [
+        '/users/create' => function () use ($UserController) {
+            $UserController->create();
+        }
+    ],
 ];
 function handleRoute($routers, $methodRequest, $UriRequest)
 {
