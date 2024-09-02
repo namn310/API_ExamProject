@@ -1,10 +1,6 @@
 <?php
 include_once __DIR__ . '/../Models/BaseModel.php';
-<<<<<<< HEAD
-class QuestionController
-=======
 class QuestionsController
->>>>>>> bd810260d5f3db9ec447c3bd549798f9c1c92218
 {
     private $ExamModel;
     private $table;
