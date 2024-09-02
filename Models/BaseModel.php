@@ -29,7 +29,7 @@ class BaseModel
         $query = $this->conn->prepare("insert into $this->table ($columns) values ($value) ");
         try {
             $query->execute($data);
-        } catch (Throwable) {
+        } catch (Throwable $e) {
             return false;
         }
         return true;
@@ -40,7 +40,7 @@ class BaseModel
         try {
             $query = $this->conn->prepare("select * from $this->table where id=:id");
             $query->execute(['id' => $id]);
-        } catch (Throwable) {
+        } catch (Throwable $e) {
             return null;
         }
         return $query->fetch();
@@ -51,7 +51,7 @@ class BaseModel
         try {
             $query = $this->conn->prepare("delete from $this->table where id=:id");
             $query->execute(['id' => $id]);
-        } catch (Throwable) {
+        } catch (Throwable $e) {
             return false;
         }
         return true;
@@ -74,7 +74,7 @@ class BaseModel
             //merge mảng để execute query
             $arrayData = array_merge_recursive($data, $arrayId);
             $query->execute($arrayData);
-        } catch (Throwable) {
+        } catch (Throwable $e) {
             return false;
         }
         return true;

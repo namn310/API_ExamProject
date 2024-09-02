@@ -1,16 +1,12 @@
 <?php
 include_once __DIR__ . '/../Models/BaseModel.php';
-<<<<<<< HEAD
-class QuestionController
-=======
-class QuestionsController
->>>>>>> bd810260d5f3db9ec447c3bd549798f9c1c92218
+class ExamsController
 {
     private $ExamModel;
     private $table;
     public function __construct()
     {
-        $this->table = 'questions';
+        $this->table = 'exams';
         $this->ExamModel = new BaseModel($this->table);
     }
     public function index()
