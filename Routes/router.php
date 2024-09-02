@@ -48,17 +48,30 @@ $routers = [
             $QuestionsController->create();
         }
     ],
+    // Lấy dánh sách bài thi
     'GET' => [
         '/exams' => function () use ($ExamsController) {
             $ExamsController->index();
         },
 
     ],
+    // Tạo mới bài thi
     'POST' => [
         '/exams/create' => function () use ($ExamsController) {
             $ExamsController->create();
         },
 
+    ],
+    'DELETE' => [
+        '/exams/delete/(\d+)' => function ($id) use ($ExamsController) {
+            $ExamsController->delete($id);
+        }
+    ],
+    // Cập nhật thông tin người dùng
+    'PUT' => [
+        '/exams/update/(\d+)' => function ($id) use ($ExamsController) {
+            $ExamsController->update($id);
+        }
     ],
     // User
     // Lấy danh sách người dùng
