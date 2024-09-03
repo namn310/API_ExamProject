@@ -22,7 +22,7 @@ class ExamsController
     public function create()
     {
         $data = json_decode(file_get_contents("php://input"), true);
-        if ($this->ExamModel->create($data) == false) {
+        if ($this->ExamModel->createExam($data) == false) {
             echo json_encode(['message' => "Có lỗi xảy ra !"]);
         } else {
             echo json_encode(['message' => "Tạo mới bài thi thành công !"]);
