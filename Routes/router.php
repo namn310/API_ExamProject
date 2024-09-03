@@ -1,8 +1,10 @@
 <?php
+
 header("Access-Control-Allow-Origin: *");
 header("Access-Control-Allow-Methods: GET, POST, DELETE, OPTIONS");
 header("Access-Control-Allow-Headers: Content-Type, Authorization");
 header("Content-Type: application/json");
+
 include_once  __DIR__ . '/../Controllers/QuestionController.php';
 include_once  __DIR__ . '/../Controllers/ExamController.php';
 include_once  __DIR__ . '/../Controllers/UserController.php';
@@ -29,6 +31,9 @@ $routers = [
         },
         '/exams' => function () use ($ExamsController) {
             $ExamsController->index();
+        },
+        '/exams/detail/(\d+)' => function ($id) use ($ExamsController) {
+            $ExamsController->detail($id);
         },
         '/users' => function () use ($UserController) {
             $UserController->index();

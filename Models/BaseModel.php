@@ -79,4 +79,50 @@ class BaseModel
         }
         return true;
     }
+
+    public function createExam($data)
+    {
+       
+        $columns = implode(",", array_keys($data));
+        
+        // Lấy giá trị từ data, dùng để prepare statement
+        $value = ":" . implode(",:", array_keys($data));
+
+        // Chuẩn bị câu lệnh SQL để chèn kỳ thi mới vào bảng exams
+        $query = $this->conn->prepare("INSERT INTO exams ($columns) VALUES ($value)");
+        
+        try {
+            // Thực thi câu lệnh
+            $query->execute($data);
+            
+            // Lấy ID của kỳ thi vừa được tạo
+            $exam_id = $this->conn->lastInsertId();
+            
+            // Lấy số lượng câu hỏi ngẫu nhiên từ $data
+            $questionCount = isset($data['totalQuestion']) ? (int)$data['totalQuestion'] : 3; // Mặc định là 3 nếu không có dữ liệu
+            
+            // Lấy ngẫu nhiên các câu hỏi từ bảng questions
+            $questionQuery = $this->conn->prepare("SELECT id FROM questions ORDER BY RAND() LIMIT :limit");
+            $questionQuery->bindParam(':limit', $questionCount, PDO::PARAM_INT);
+            $questionQuery->execute();
+            $questions = $questionQuery->fetchAll(PDO::FETCH_ASSOC);
+            
+            // Lưu các câu hỏi vào bảng exams_questions
+            foreach ($questions as $question) {
+                $examQuestionQuery = $this->conn->prepare("INSERT INTO questions_exam (id_exam, id_ques) VALUES (:id_exam, :id_ques)");
+                $examQuestionQuery->execute([
+                    'id_exam' => $exam_id,
+                    'id_ques' => $question['id']
+                ]);
+            }
+            
+        } catch (Throwable $e) {
+            // Xử lý lỗi nếu có
+            return false;
+        }
+        
+        return true;
+    }
+
+
 }
