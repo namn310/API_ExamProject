@@ -1,7 +1,8 @@
 <?php
-header('Access-Control-Allow-Origin: *');
-header('Content-Type: application/json');
-
+header("Access-Control-Allow-Origin: *");
+header("Access-Control-Allow-Methods: GET, POST, DELETE, OPTIONS");
+header("Access-Control-Allow-Headers: Content-Type, Authorization");
+header("Content-Type: application/json");
 include_once  __DIR__ . '/../Controllers/QuestionController.php';
 include_once  __DIR__ . '/../Controllers/ExamController.php';
 include_once  __DIR__ . '/../Controllers/UserController.php';
@@ -72,19 +73,30 @@ $routers = [
             $UserController->create();
         }
     ],
+    'OPTIONS' => function () {
+        http_response_code(204); // No Content
+        exit();
+    }
 ];
 
 function handleRoute($routers, $methodRequest, $UriRequest)
 {
-    foreach ($routers[$methodRequest] as $router => $function) {
-        if (preg_match("#^$router$#", $UriRequest, $value)) {
-            // ví dụ http là : API_EXAMPLE/exams?id=1 thì array_shift($value)=1;
-            array_shift($value);
-            return call_user_func_array($function, $value);
+    if ($methodRequest === 'OPTIONS') {
+        if (isset($routers['OPTIONS'])) {
+            $routers['OPTIONS']();
         }
     }
-    header("HTTP/1.0 404 Not Found");
-    echo json_encode(['message' => 'Not found']);
+    if (isset($routers[$methodRequest])) {
+        foreach ($routers[$methodRequest] as $router => $function) {
+            if (preg_match("#^$router$#", $UriRequest, $value)) {
+                // ví dụ http là : API_EXAMPLE/exams?id=1 thì array_shift($value)=1;
+                array_shift($value);
+                return call_user_func_array($function, $value);
+            }
+        }
+        header("HTTP/1.0 404 Not Found");
+        echo json_encode(['message' => 'Not found']);
+    }
 }
 
 handleRoute($routers, $methodRequest, $UriRequest);
