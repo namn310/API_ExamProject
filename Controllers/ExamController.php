@@ -67,4 +67,10 @@ class ExamsController
             }
         }
     }
+
+    public function getQuestionsExam($id)
+    {
+        $result = $this->ExamModel->readQuestionExam($id);
+        echo json_encode(['data' => $result]);
+    }
 }

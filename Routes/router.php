@@ -4,6 +4,8 @@ header("Access-Control-Allow-Origin: *");
 header("Access-Control-Allow-Methods: GET, POST, DELETE, OPTIONS,PUT,PATCH");
 header("Access-Control-Allow-Headers: Content-Type, Authorization");
 header("Content-Type: application/json");
+header('Access-Control-Allow-Headers: Access-Control-Allow-Headers,Content-Type,Access-Control-Allow-Methods, Authorization, X-Requested-With');
+
 
 include_once  __DIR__ . '/../Controllers/QuestionController.php';
 include_once  __DIR__ . '/../Controllers/ExamController.php';
@@ -34,6 +36,9 @@ $routers = [
         },
         '/exams/detail/(\d+)' => function ($id) use ($ExamsController) {
             $ExamsController->detail($id);
+        },
+        '/exams/questions-exams/(\d+)' => function ($id) use ($ExamsController) {
+            $ExamsController->getQuestionsExam($id);
         },
         '/users' => function () use ($UserController) {
             $UserController->index();
