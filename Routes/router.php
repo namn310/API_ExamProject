@@ -34,6 +34,9 @@ $routers = [
         '/exams/detail/(\d+)' => function ($id) use ($ExamsController) {
             $ExamsController->detail($id);
         },
+        '/exams/questions-exams/(\d+)' => function ($id) use ($ExamsController) {
+            $ExamsController->getQuestionsExam($id);
+        },
         '/users' => function () use ($UserController) {
             $UserController->index();
         },
