@@ -35,11 +35,13 @@ class Connection
         $dbName = getenv('DB_DATABASE');
         $dbUser = getenv('DB_USERNAME');
         $dbPass = getenv('DB_PASSWORD');
-        $conn = new PDO("$dbConnection:host=$dbHost;dbname=$dbName", $dbUser, $dbPass);
-        $conn->setAttribute(PDO::ATTR_DEFAULT_FETCH_MODE, PDO::FETCH_OBJ);
-        $conn->exec("set names utf8");
+        try {
+            $conn = new PDO("$dbConnection:host=$dbHost;dbname=$dbName", $dbUser, $dbPass);
+            $conn->setAttribute(PDO::ATTR_DEFAULT_FETCH_MODE, PDO::FETCH_OBJ);
+            $conn->exec("set names utf8");
+        } catch (Throwable) {
+            echo json_encode("Error in connect database");  
+        }
         return $conn;
     }
 }
-
-?>

@@ -12,7 +12,7 @@ class QuestionsController
     public function index()
     {
         $result = $this->ExamModel->index();
-        echo json_encode(['data' => $result]);
+        echo json_encode(['question' => $result]);
     }
     public function detail($id)
     {
