@@ -15,7 +15,7 @@ class BaseModel
     {
         // phân trang
         $page = isset($_GET['page']) ? $_GET['page'] : 1;
-        $limit = 5;
+        $limit = 10;
         $offset = ($page - 1) * $limit;
         // lấy tổng số bản ghi trong table
         $count_query = $this->conn->prepare("SELECT COUNT(*) as total from $this->table");
@@ -34,7 +34,7 @@ class BaseModel
         $query->execute();
         return ['data' => $query->fetchAll(), 'limit' => $limit, 'current_page' => $page, 'total_page' => $page_total, 'record_total' => $record_total];
         // return $query->fetchAll();
-        
+
     }
     // create dữ liệu
     public function create($data)
