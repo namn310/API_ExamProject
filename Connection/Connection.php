@@ -39,7 +39,7 @@ class Connection
             $conn = new PDO("$dbConnection:host=$dbHost;dbname=$dbName", $dbUser, $dbPass);
             $conn->setAttribute(PDO::ATTR_DEFAULT_FETCH_MODE, PDO::FETCH_OBJ);
             $conn->exec("set names utf8");
-        } catch (Throwable) {
+        } catch (Throwable $e) {
             echo json_encode("Error in connect database");  
         }
         return $conn;
