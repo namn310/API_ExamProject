@@ -10,11 +10,13 @@ header('Access-Control-Allow-Headers: Access-Control-Allow-Headers,Content-Type,
 include_once  __DIR__ . '/../Controllers/QuestionController.php';
 include_once  __DIR__ . '/../Controllers/ExamController.php';
 include_once  __DIR__ . '/../Controllers/UserController.php';
+include_once  __DIR__ . '/../Controllers/CategoryExam.php';
 
 // Initialize the controllers
 $QuestionsController = new QuestionsController();
 $ExamsController = new ExamsController();
 $UserController = new UserController();
+$Category_exam = new CategoryExamController();
 
 $methodRequest = $_SERVER['REQUEST_METHOD'];
 $UriRequest = $_SERVER['REQUEST_URI'];
@@ -45,6 +47,9 @@ $routers = [
         },
         '/users/detail/(\d+)' => function ($id) use ($UserController) {
             $UserController->detail($id);
+        },
+        '/category-exam' => function () use ($Category_exam) {
+            $Category_exam->index();
         },
     ],
     // xóa danh sách câu hỏi
