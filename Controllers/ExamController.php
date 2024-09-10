@@ -73,4 +73,10 @@ class ExamsController
         $result = $this->ExamModel->readQuestionExam($id);
         echo json_encode(['data' => $result]);
     }
+
+    public function getCategoryExam($id)
+    {
+        $result = $this->ExamModel->readCategoryExam($id);
+        echo json_encode(['data' => $result]);
+    }
 }

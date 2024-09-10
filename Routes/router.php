@@ -51,6 +51,12 @@ $routers = [
         '/category-exam' => function () use ($Category_exam) {
             $Category_exam->index();
         },
+        '/category-question/(\d+)' => function ($id) use ($Category_exam) {
+            $Category_exam->getQuestionsCategory($id);
+        },
+        '/category-exam/(\d+)' => function ($id) use ($ExamsController) {
+            $ExamsController->getCategoryExam($id);
+        },
     ],
     // xóa danh sách câu hỏi
     'DELETE' => [

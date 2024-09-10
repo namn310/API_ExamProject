@@ -68,9 +68,9 @@ class CategoryExamController
         }
     }
 
-    public function getQuestionsExam($id)
+    public function getQuestionsCategory($id)
     {
-        $result = $this->CategoryModel->readQuestionExam($id);
+        $result = $this->CategoryModel->readQuestionCategory($id);
         echo json_encode(['data' => $result]);
     }
 }
