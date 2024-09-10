@@ -81,6 +81,12 @@ $routers = [
         },
         '/users/create' => function () use ($UserController) {
             $UserController->create();
+        },
+        '/users/login' => function () use ($UserController) {
+            $UserController->Login();
+        },
+        '/users/jwt' =>function() use ($UserController){
+            $UserController->checkJWT();
         }
     ],
     // khi xảy ra CORS trình duyệt sẽ gửi OPTIONS (preflight request) trước khi yêu cầu thực tế đến máy chủ. Mục đích kiếm tra xem máy chủ có hỗ trợ method mà web gửi lên không

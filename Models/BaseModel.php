@@ -1,5 +1,10 @@
 <?php
 include_once __DIR__ . "/../Connection/Connection.php";
+require 'vendor/autoload.php';
+
+use Firebase\JWT\JWT;
+use Firebase\JWT\Key;
+
 class BaseModel
 {
     protected $table;
@@ -156,5 +161,21 @@ class BaseModel
             return null;
         }
         return $query->fetchAll();
+    }
+    public function checkToken()
+    {
+        // lấy headers từ UI khi fetch API
+        $header = getallheaders();
+        if (isset($header['Authorization'])) {
+            try {
+                $jwt = str_replace('Bearer ', '', $header['Authorization']);
+                $decoded = JWT::decode($jwt, new Key(getenv('KEY'), 'HS256'));
+                echo json_encode(['decode' => $decoded->data]);
+            } catch (Throwable $e) {
+                echo json_encode(['message' => $e]);
+            }
+        } else {
+            echo json_encode(['message' => 'Không tồn tại Token']);
+        }
     }
 }
