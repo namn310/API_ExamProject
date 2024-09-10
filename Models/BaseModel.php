@@ -178,4 +178,29 @@ class BaseModel
             echo json_encode(['message' => 'Không tồn tại Token']);
         }
     }
+    public function readQuestionCategory($id)
+    {
+        try {
+            $query = $this->conn->prepare("SELECT exams.id, exams.title, exams.duration,exams.totalQuestion FROM exams
+                INNER JOIN category_exams on exams.category = category_exams.id
+                WHERE category_exams.id=:id");
+            $query->execute(['id' => $id]);
+        } catch (Throwable $e) {
+            return null;
+        }
+        return $query->fetchAll();
+    }
+
+    public function readCategoryExam($id)
+    {
+        try {
+            $query = $this->conn->prepare("SELECT category_exams.title FROM category_exams
+                INNER JOIN exams on category_exams.id = exams.category
+                WHERE exams.category=:id");
+            $query->execute(['id' => $id]);
+        } catch (Throwable $e) {
+            return null;
+        }
+        return $query->fetch();
+    }
 }
