@@ -67,4 +67,7 @@ class QuestionsController
             }
         }
     }
+    public function getUser(){
+        $this->ExamModel->getUserCreate();
+    }
 }

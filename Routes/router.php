@@ -33,6 +33,9 @@ $routers = [
         '/questions/detail/(\d+)' => function ($id) use ($QuestionsController) {
             $QuestionsController->detail($id);
         },
+        '/questions/userCreate' => function () use ($QuestionsController) {
+            $QuestionsController->getUser();
+        },
         '/exams' => function () use ($ExamsController) {
             $ExamsController->index();
         },
@@ -96,7 +99,7 @@ $routers = [
         '/users/login' => function () use ($UserController) {
             $UserController->Login();
         },
-        '/users/jwt' =>function() use ($UserController){
+        '/users/jwt' => function () use ($UserController) {
             $UserController->checkJWT();
         }
     ],

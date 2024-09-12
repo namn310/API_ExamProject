@@ -144,7 +144,7 @@ class BaseModel
             // Xử lý lỗi nếu có
             return false;
             // echo $e;
-        }   
+        }
 
         return true;
     }
@@ -166,7 +166,16 @@ class BaseModel
     }
 
     // function question
-
+    public function getUserCreate()
+    {
+        try {
+            $query = $this->conn->prepare("select name,id from users where role=:role");
+            $query->execute(['role' => 'admin']);
+        } catch (Throwable $e) {
+            echo json_encode(['message' => "Lỗi".$e]);
+        }
+        echo json_encode(['data' => $query->fetchAll()]);
+    }
     // function Exam
     public function readQuestionExam($id)
     {

@@ -25,13 +25,13 @@ class CategoryExamController
         if ($this->CategoryModel->createExam($data) == false) {
             echo json_encode(['message' => "Có lỗi xảy ra !"]);
         } else {
-            echo json_encode(['message' => "Tạo mới bài thi thành công !"]);
+            echo json_encode(['message' => "Tạo mới danh mục bài thi thành công !"]);
         }
     }
     public function getExam($id)
     {
         if ($id == 0) {
-            echo json_encode(['message' => 'Dữ liệu bài thi không tồn tại !']);
+            echo json_encode(['message' => 'Dữ liệu danh mục bài thi không tồn tại !']);
         } else {
             try {
                 $this->CategoryModel->read($id);
