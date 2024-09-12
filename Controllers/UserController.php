@@ -105,21 +105,40 @@ class UserController
             if ($query->rowCount() > 0) {
                 $timeCreate = time();
                 $timeExpire = time() + 86400;
-                $payload = [
-                    'iat' => $timeCreate,
-                    'exp' => $timeExpire,
-                    'data' => [
-                        'id' => $user['id'],
-                        'email' => $user['email'],
-                        'name' => $user['name'],
-                        'role' => $user['role']
-                    ]
-                ];
-                $jwt = JWT::encode($payload, $key, 'HS256');
-                echo json_encode([
-                    'message' => 'Đăng nhập thành công !',
-                    'jwt' => $jwt,
-                ]);
+                if ($role === 'admin') {
+                    $payload = [
+                        'iat' => $timeCreate,
+                        'exp' => $timeExpire,
+                        'data' => [
+                            'id' => $user['id'],
+                            'email' => $user['email'],
+                            'name' => $user['name'],
+                            'role' => $user['role']
+                        ]
+                    ];
+                    $jwt = JWT::encode($payload, $key, 'HS256');
+                    echo json_encode([
+                        'message' => 'Đăng nhập thành công !',
+                        'jwtAdmin' => $jwt,
+                    ]);
+                }
+                if ($role === 'student') {
+                    $payload = [
+                        'iat' => $timeCreate,
+                        'exp' => $timeExpire,
+                        'data' => [
+                            'id' => $user['id'],
+                            'email' => $user['email'],
+                            'name' => $user['name'],
+                            'role' => $user['role']
+                        ]
+                    ];
+                    $jwt = JWT::encode($payload, $key, 'HS256');
+                    echo json_encode([
+                        'message' => 'Đăng nhập thành công !',
+                        'jwtStudent' => $jwt,
+                    ]);
+                }
             } else {
                 echo json_encode(['message' => 'Đăng nhập thất bại ! Tài khoản hoặc mật khẩu không chính xác']);
             }
@@ -131,4 +150,5 @@ class UserController
     {
         $this->UserModel->checkToken();
     }
+    public function logOut() {}
 }

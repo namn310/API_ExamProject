@@ -143,24 +143,10 @@ class BaseModel
         } catch (Throwable $e) {
             // Xử lý lỗi nếu có
             return false;
-        }
+            // echo $e;
+        }   
 
         return true;
-    }
-
-    public function readQuestionExam($id)
-    {
-        try {
-            $query = $this->conn->prepare("SELECT questions.id, questions.class, questions.Subject, questions.title, questions.A, questions.B, questions.C,
-                        questions.D, questions.correctAns
-                        FROM questions
-                        INNER JOIN questions_exam on questions.id = questions_exam.id_ques
-                        INNER JOIN exams on questions_exam.id_exam = exams.id where exams.id=:id");
-            $query->execute(['id' => $id]);
-        } catch (Throwable $e) {
-            return null;
-        }
-        return $query->fetchAll();
     }
     public function checkToken()
     {
@@ -177,6 +163,24 @@ class BaseModel
         } else {
             echo json_encode(['message' => 'Không tồn tại Token']);
         }
+    }
+
+    // function question
+
+    // function Exam
+    public function readQuestionExam($id)
+    {
+        try {
+            $query = $this->conn->prepare("SELECT questions.id, questions.class, questions.Subject, questions.title, questions.A, questions.B, questions.C,
+                        questions.D, questions.correctAns
+                        FROM questions
+                        INNER JOIN questions_exam on questions.id = questions_exam.id_ques
+                        INNER JOIN exams on questions_exam.id_exam = exams.id where exams.id=:id");
+            $query->execute(['id' => $id]);
+        } catch (Throwable $e) {
+            return null;
+        }
+        return $query->fetchAll();
     }
     public function readQuestionCategory($id)
     {
