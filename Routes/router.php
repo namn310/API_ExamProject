@@ -62,6 +62,9 @@ $routers = [
         '/result' => function () use ($ResultController) {
             $ResultController->index();
         },
+        '/result/detail/(\d+)' => function ($id) use ($ResultController) {
+            $ResultController->detail($id);
+        },
     ],
     // xóa danh sách câu hỏi
     'DELETE' => [

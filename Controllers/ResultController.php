@@ -6,7 +6,7 @@ class ResultController
     private $table;
     public function __construct()
     {
-        $this->table = 'result';
+        $this->table = 'results';
         $this->ResultModel = new BaseModel($this->table);
     }
     public function index()
@@ -22,23 +22,10 @@ class ResultController
     public function create()
     {
         $data = json_decode(file_get_contents("php://input"), true);
-        if ($this->ResultModel->createExam($data) == false) {
+        if ($this->ResultModel->create($data) == false) {
             echo json_encode(['message' => "Có lỗi xảy ra !"]);
         } else {
             echo json_encode(['message' => "Tạo mới bài thi thành công !"]);
-        }
-    }
-    public function getExam($id)
-    {
-        if ($id == 0) {
-            echo json_encode(['message' => 'Dữ liệu bài thi không tồn tại !']);
-        } else {
-            try {
-                $this->ResultModel->read($id);
-            } catch (Throwable $e) {
-                echo json_encode(['message' => 'Có lỗi xảy ra !']);
-            }
-            echo json_encode(['message' => 'Lấy thông tin bài thi thành công']);
         }
     }
     public function update($id)
