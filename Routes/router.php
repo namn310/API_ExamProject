@@ -11,12 +11,14 @@ include_once  __DIR__ . '/../Controllers/QuestionController.php';
 include_once  __DIR__ . '/../Controllers/ExamController.php';
 include_once  __DIR__ . '/../Controllers/UserController.php';
 include_once  __DIR__ . '/../Controllers/CategoryExam.php';
+include_once  __DIR__ . '/../Controllers/ResultController.php';
 
 // Initialize the controllers
 $QuestionsController = new QuestionsController();
 $ExamsController = new ExamsController();
 $UserController = new UserController();
 $Category_exam = new CategoryExamController();
+$ResultController = new ResultController();
 
 $methodRequest = $_SERVER['REQUEST_METHOD'];
 $UriRequest = $_SERVER['REQUEST_URI'];
@@ -57,6 +59,9 @@ $routers = [
         '/category-exam/(\d+)' => function ($id) use ($ExamsController) {
             $ExamsController->getCategoryExam($id);
         },
+        '/result' => function () use ($ResultController) {
+            $ResultController->index();
+        },
     ],
     // xóa danh sách câu hỏi
     'DELETE' => [
@@ -89,6 +94,9 @@ $routers = [
         },
         '/exams/create' => function () use ($ExamsController) {
             $ExamsController->create();
+        },
+        '/result/create' => function () use ($ResultController) {
+            $ResultController->create();
         },
         '/users/create' => function () use ($UserController) {
             $UserController->create();
