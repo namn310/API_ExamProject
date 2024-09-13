@@ -65,9 +65,18 @@ $routers = [
         '/result' => function () use ($ResultController) {
             $ResultController->index();
         },
+        // lấy chi tiết kết quả bài thi
         '/result/detail/(\d+)' => function ($id) use ($ResultController) {
             $ResultController->detail($id);
         },
+        // lấy dữ liệu để hiển thị lại bài thi đã thi
+        '/result/review/(\d+)' => function($id) use ($ResultController){
+            $ResultController->getReview($id);
+        },
+        // lấy danh sách các bài thi đã làm của User 
+        '/UserlistResult/(\d+)' => function($id) use ($ResultController) {
+            $ResultController->getResultListUser($id);
+        }
     ],
     // xóa danh sách câu hỏi
     'DELETE' => [

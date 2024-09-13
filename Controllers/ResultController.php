@@ -14,19 +14,22 @@ class ResultController
         $result = $this->ResultModel->index();
         echo json_encode(['data' => $result]);
     }
+    // lấy danh sách các bài làm của user
+    public function getResultListUser($id){
+        $this->ResultModel->getUserResultListModel($id);
+    }
     public function detail($id)
     {
         $result = $this->ResultModel->read($id);
         echo json_encode(['data' => $result]);
     }
+    public function getReview($id){
+        $this->ResultModel->getReviewModel($id);
+    }
     public function create()
     {
         $data = json_decode(file_get_contents("php://input"), true);
-        if ($this->ResultModel->create($data) == false) {
-            echo json_encode(['message' => "Có lỗi xảy ra !"]);
-        } else {
-            echo json_encode(['message' => "Tạo mới bài thi thành công !"]);
-        }
+        $this->ResultModel->createResultExam($data);
     }
     public function update($id)
     {
