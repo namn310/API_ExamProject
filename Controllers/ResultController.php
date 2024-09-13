@@ -22,10 +22,14 @@ class ResultController
     public function create()
     {
         $data = json_decode(file_get_contents("php://input"), true);
-        if ($this->ResultModel->create($data) == false) {
-            echo json_encode(['message' => "Có lỗi xảy ra !"]);
+        $result = $this->ResultModel->createResult($data);
+        if ($result['success'] == false) {
+            echo json_encode(['message' => $result['message']]);
         } else {
-            echo json_encode(['message' => "Tạo mới bài thi thành công !"]);
+            echo json_encode([
+                'message' => 'Tạo mới bài thi thành công!',
+                'id' => $result['id'] // ID của bản ghi mới tạo
+            ]);
         }
     }
     public function update($id)

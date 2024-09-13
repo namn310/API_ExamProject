@@ -216,4 +216,38 @@ class BaseModel
         }
         return $query->fetch();
     }
+
+    public function createResult($data)
+    {
+        // Lấy tên cột từ data
+    $columns = implode(",", array_keys($data));
+
+    // Chuẩn bị giá trị truyền vào SQL
+    $value = ":" . implode(",:", array_keys($data));
+
+    // Chuẩn bị câu lệnh SQL
+    $query = $this->conn->prepare("INSERT INTO {$this->table} ($columns) VALUES ($value)");
+
+    try {
+        // Thực thi câu lệnh
+        $query->execute($data);
+
+        // Lấy ID của bản ghi vừa thêm (nếu cần)
+        $insertedId = $this->conn->lastInsertId();
+
+        return [
+            'success' => true,
+            'message' => 'Tạo mới bản ghi thành công!',
+            'id' => $insertedId
+        ];
+    } catch (Throwable $e) {
+        // Ghi log lỗi
+        error_log($e->getMessage());
+
+        return [
+            'success' => false,
+            'message' => 'Có lỗi xảy ra khi tạo bản ghi.'
+        ];
+    }
+    }
 }
