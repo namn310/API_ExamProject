@@ -1,13 +1,16 @@
 <?php
 include_once __DIR__ . '/../Models/BaseModel.php';
+include_once __DIR__ . '/../Models/ResultModel.php';
+
 class ResultController
 {
     private $ResultModel;
     private $table;
     public function __construct()
     {
-        $this->table = 'results';
-        $this->ResultModel = new BaseModel($this->table);
+        // $this->table = 'results';
+        $this->ResultModel = new ResultModel();
+        // $this->ResultModel = new BaseModel($this->table);
     }
     public function index()
     {
@@ -29,19 +32,8 @@ class ResultController
     public function create()
     {
         $data = json_decode(file_get_contents("php://input"), true);
-// <<<<<<< HEAD
         $this->ResultModel->createResultExam($data);
-// =======
-        // $result = $this->ResultModel->createResult($data);
-        // if ($result['success'] == false) {
-        //     echo json_encode(['message' => $result['message']]);
-        // } else {
-        //     echo json_encode([
-        //         'message' => 'Tạo mới bài thi thành công!',
-        //         'id' => $result['id'] // ID của bản ghi mới tạo
-        //     ]);
         }
-// >>>>>>> 90c1e15630e25b55373c8ddc6b35eb781eac8225
     
     public function update($id)
     {

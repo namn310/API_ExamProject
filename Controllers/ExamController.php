@@ -1,13 +1,15 @@
 <?php
-include_once __DIR__ . '/../Models/BaseModel.php';
+// include_once __DIR__ . '/../Models/BaseModel.php';
+include_once __DIR__ . '/../Models/ExamModel.php';
 class ExamsController
 {
     private $ExamModel;
-    private $table;
+    // private $table;
     public function __construct()
     {
-        $this->table = 'exams';
-        $this->ExamModel = new BaseModel($this->table);
+        // $this->table = 'exams';
+        // $this->ExamModel = new BaseModel($this->table);
+        $this->ExamModel = new ExamModel();
     }
     public function index()
     {
@@ -26,19 +28,6 @@ class ExamsController
             echo json_encode(['message' => "Có lỗi xảy ra !"]);
         } else {
             echo json_encode(['message' => "Tạo mới bài thi thành công !"]);
-        }
-    }
-    public function getExam($id)
-    {
-        if ($id == 0) {
-            echo json_encode(['message' => 'Dữ liệu bài thi không tồn tại !']);
-        } else {
-            try {
-                $this->ExamModel->read($id);
-            } catch (Throwable $e) {
-                echo json_encode(['message' => 'Có lỗi xảy ra !']);
-            }
-            echo json_encode(['message' => 'Lấy thông tin bài thi thành công']);
         }
     }
     public function update($id)

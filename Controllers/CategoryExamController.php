@@ -1,13 +1,13 @@
 <?php
-include_once __DIR__ . '/../Models/BaseModel.php';
+include_once __DIR__ . '/../Models/CategoryExamModel.php';
 class CategoryExamController
 {
     private $CategoryModel;
-    private $table;
+    // private $table;
     public function __construct()
     {
-        $this->table = 'category_exams';
-        $this->CategoryModel = new BaseModel($this->table);
+        // $this->table = 'category_exams';
+        $this->CategoryModel = new CategoryExamModel();
     }
     public function index()
     {
@@ -22,35 +22,35 @@ class CategoryExamController
     public function create()
     {
         $data = json_decode(file_get_contents("php://input"), true);
-        if ($this->CategoryModel->createExam($data) == false) {
+        if ($this->CategoryModel->create($data) == false) {
             echo json_encode(['message' => "Có lỗi xảy ra !"]);
         } else {
             echo json_encode(['message' => "Tạo mới danh mục bài thi thành công !"]);
         }
     }
-    public function getExam($id)
-    {
-        if ($id == 0) {
-            echo json_encode(['message' => 'Dữ liệu danh mục bài thi không tồn tại !']);
-        } else {
-            try {
-                $this->CategoryModel->read($id);
-            } catch (Throwable $e) {
-                echo json_encode(['message' => 'Có lỗi xảy ra !']);
-            }
-            echo json_encode(['message' => 'Lấy thông tin bài thi thành công']);
-        }
-    }
+    // public function getExam($id)
+    // {
+    //     if ($id == 0) {
+    //         echo json_encode(['message' => 'Dữ liệu danh mục bài thi không tồn tại !']);
+    //     } else {
+    //         try {
+    //             $this->CategoryModel->read($id);
+    //         } catch (Throwable $e) {
+    //             echo json_encode(['message' => 'Có lỗi xảy ra !']);
+    //         }
+    //         echo json_encode(['message' => 'Lấy thông tin bài thi thành công']);
+    //     }
+    // }
     public function update($id)
     {
         $data = json_decode(file_get_contents("php://input"), true);
         if ($id == 0) {
-            echo json_encode(['message' => 'Dữ liệu bài thi không tồn tại !']);
+            echo json_encode(['message' => 'Dữ liệu danh mục bài thi không tồn tại !']);
         } else {
             if ($this->CategoryModel->update($data, $id) == false) {
-                echo json_encode(['message' => 'Cập nhật bài thi không thành công !']);
+                echo json_encode(['message' => 'Cập nhật danh mục bài thi không thành công !']);
             } else {
-                echo json_encode(['message' => 'Cập nhật thông tin bài thi thành công !']);
+                echo json_encode(['message' => 'Cập nhật danh mục bài thi thành công !']);
             }
         }
     }
@@ -58,12 +58,12 @@ class CategoryExamController
     public function delete($id)
     {
         if ($id == 0) {
-            echo json_encode(['message' => 'Dữ liệu bài thi không tồn tại !']);
+            echo json_encode(['message' => 'Danh mục không tồn tại !']);
         } else {
             if ($this->CategoryModel->delete($id) == false) {
                 echo json_encode(['message' => 'Có lỗi xảy ra !']);
             } else {
-                echo json_encode(['message' => 'Xóa bài thi thành công !']);
+                echo json_encode(['message' => 'Xóa danh mục thành công !']);
             }
         }
     }

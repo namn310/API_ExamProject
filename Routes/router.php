@@ -10,7 +10,7 @@ header('Access-Control-Allow-Headers: Access-Control-Allow-Headers,Content-Type,
 include_once  __DIR__ . '/../Controllers/QuestionController.php';
 include_once  __DIR__ . '/../Controllers/ExamController.php';
 include_once  __DIR__ . '/../Controllers/UserController.php';
-include_once  __DIR__ . '/../Controllers/CategoryExam.php';
+include_once  __DIR__ . '/../Controllers/CategoryExamController.php';
 include_once  __DIR__ . '/../Controllers/ResultController.php';
 
 // Initialize the controllers
@@ -70,11 +70,11 @@ $routers = [
             $ResultController->detail($id);
         },
         // lấy dữ liệu để hiển thị lại bài thi đã thi
-        '/result/review/(\d+)' => function($id) use ($ResultController){
+        '/result/review/(\d+)' => function ($id) use ($ResultController) {
             $ResultController->getReview($id);
         },
         // lấy danh sách các bài thi đã làm của User 
-        '/UserlistResult/(\d+)' => function($id) use ($ResultController) {
+        '/UserlistResult/(\d+)' => function ($id) use ($ResultController) {
             $ResultController->getResultListUser($id);
         }
     ],
@@ -109,6 +109,9 @@ $routers = [
         },
         '/exams/create' => function () use ($ExamsController) {
             $ExamsController->create();
+        },
+        '/categoryExam/create' => function () use ($Category_exam) {
+            $Category_exam->create();
         },
         '/result/create' => function () use ($ResultController) {
             $ResultController->create();
