@@ -15,34 +15,34 @@ class ExamModel extends BaseModel
     }
     public function createExam($data)
     {
-
+        $conn=Connection::GetConnect();
         $columns = implode(",", array_keys($data));
-
         // Lấy giá trị từ data, dùng để prepare statement
         $value = ":" . implode(",:", array_keys($data));
-
         // Chuẩn bị câu lệnh SQL để chèn kỳ thi mới vào bảng exams
-        $query = $this->conn->prepare("INSERT INTO exams ($columns) VALUES ($value)");
-
+        $query = $conn->prepare("INSERT INTO exams ($columns) VALUES ($value)");
+        // echo json_encode($data['category']);
+        $cat=$data['category'];
         try {
             // Thực thi câu lệnh
             $query->execute($data);
 
             // Lấy ID của kỳ thi vừa được tạo
-            $exam_id = $this->conn->lastInsertId();
+            $exam_id = $conn->lastInsertId();
 
             // Lấy số lượng câu hỏi ngẫu nhiên từ $data
             $questionCount = isset($data['totalQuestion']) ? (int)$data['totalQuestion'] : 3; // Mặc định là 3 nếu không có dữ liệu
 
             // Lấy ngẫu nhiên các câu hỏi từ bảng questions
-            $questionQuery = $this->conn->prepare("SELECT id FROM questions ORDER BY RAND() LIMIT :limit");
+            $questionQuery = $conn->prepare("SELECT id FROM questions where Subject=:category ORDER BY RAND() LIMIT :limit");
             $questionQuery->bindParam(':limit', $questionCount, PDO::PARAM_INT);
+            $questionQuery->bindParam(':category', $cat, PDO::PARAM_INT);
             $questionQuery->execute();
             $questions = $questionQuery->fetchAll(PDO::FETCH_ASSOC);
 
             // Lưu các câu hỏi vào bảng exams_questions
             foreach ($questions as $question) {
-                $examQuestionQuery = $this->conn->prepare("INSERT INTO questions_exam (id_exam, id_ques) VALUES (:id_exam, :id_ques)");
+                $examQuestionQuery = $conn->prepare("INSERT INTO questions_exam (id_exam, id_ques) VALUES (:id_exam, :id_ques)");
                 $examQuestionQuery->execute([
                     'id_exam' => $exam_id,
                     'id_ques' => $question['id']
@@ -51,7 +51,7 @@ class ExamModel extends BaseModel
         } catch (Throwable $e) {
             // Xử lý lỗi nếu có
             return false;
-            // echo $e;
+           
         }
 
         return true;
@@ -72,8 +72,7 @@ class ExamModel extends BaseModel
     {
         $conn=Connection::GetConnect();
         try {
-            $query = $conn->prepare("SELECT questions.id, questions.class, questions.Subject, questions.title, questions.A, questions.B, questions.C,
-                        questions.D, questions.correctAns
+            $query = $conn->prepare("SELECT questions.image,questions.id, questions.class, questions.Subject, questions.title, questions.answerlist, questions.correctAns
                         FROM questions
                         INNER JOIN questions_exam on questions.id = questions_exam.id_ques
                         INNER JOIN exams on questions_exam.id_exam = exams.id where exams.id=:id");
@@ -82,6 +81,7 @@ class ExamModel extends BaseModel
             return null;
         }
         return $query->fetchAll();
+        // echo json_encode($query->fetchAll());
     }
     public function readCategoryExam($id)
     {

@@ -4,9 +4,11 @@ require 'vendor/autoload.php';
 class ResultModel extends BaseModel{
     protected $table;
     protected $ResultModel;
+    protected $tableResultDetail;
     public function __construct()
     {
         $this->table = 'results';
+        $this->tableResultDetail = 'result_detail';
         $this->ResultModel = new BaseModel($this->table);
     }
     public function index()
@@ -37,7 +39,7 @@ class ResultModel extends BaseModel{
         $query->execute();
         // return ['data' => $query->fetchAll(), 'limit' => $limit, 'current_page' => $page, 'total_page' => $page_total, 'record_total' => $record_total];
         try {
-            $query = $conn->prepare("SELECT results.id,results.id_user,results.id_exam,results.score,results.duration,results.created_at,exams.title from results INNER JOIN exams ON results.id_exam = exams.id  WHERE results.id_user=:id_user LIMIT :limit OFFSET :offset");
+            $query = $conn->prepare("SELECT results.id,results.id_user,results.id_exam,results.score,results.duration,results.created_at,exams.title from results INNER JOIN exams ON results.id_exam = exams.id  WHERE results.id_user=:id_user ORDER BY results.id DESC LIMIT :limit OFFSET :offset ");
             $query->bindParam(':limit', $limit, PDO::PARAM_INT);
             $query->bindParam(':offset', $offset, PDO::PARAM_INT);
             $query->bindParam(':id_user', $id, PDO::PARAM_INT);
@@ -54,7 +56,7 @@ class ResultModel extends BaseModel{
     {
         $conn=Connection::GetConnect();
         try {
-            $query = $conn->prepare("select id_question,answer from result_detail where id_results=:id_results");
+            $query = $conn->prepare("select id_question,answer from $this->tableResultDetail where id_results=:id_results order by id_question");
             $query->execute(['id_results' => $id]);
         } catch (Throwable $e) {
             echo json_encode(['message' => "Có lối xảy ra "]);
@@ -79,23 +81,24 @@ class ResultModel extends BaseModel{
             $query->execute($data);
             $lastRecord = $conn->lastInsertId();
             // thêm dữ liệu vào bảng result_question
-            $query2 = $conn->prepare("select id_ques from questions_exam where id_exam=:id_exam");
-            $query2->execute(['id_exam' => $idExam]);
-            foreach ($query2->fetchAll() as $row) {
-                $answerSelected = '';
+            // $query2 = $conn->prepare("select id_ques from questions_exam where id_exam=:id_exam");
+            // $query2->execute(['id_exam' => $idExam]);
+            // foreach ($query2->fetchAll() as $row) {
+                
                 $query3 = $conn->prepare("insert into result_detail set id_results=:id_results,id_question=:id_question,answer=:answer");
                 foreach ($answer as $row2) {
                     // duyệt mảng answer lấy id trong answer trùng với id trong query2 thì lấy câu trả lời 
-                    if ($row2['id'] == $row->id_ques) {
+                    // if ($row2['id'] == $row->id_ques) {
                         $answerSelected = $row2['answer'];
-                    }
-                }
-                $query3->execute(['id_results' => $lastRecord, 'id_question' => $row->id_ques, 'answer' => $answerSelected]);
+                    // }
+                // }
+                $query3->execute(['id_results' => $lastRecord, 'id_question' => $row2['id'], 'answer' => $answerSelected]);
             }
         } catch (Throwable $e) {
             echo json_encode(['message' => 'Có lỗi xảy ra ' . $e]);
         }
         echo json_encode(['message' => 'Thêm thành công ', 'lastInsert' => $lastRecord]);
+        // echo json_encode(['message' => 'Thêm thành công ', 'lastInsert' => $answer]);
     }
     public function update($data,$id){
         $this->ResultModel->update($data,$id);

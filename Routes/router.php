@@ -4,6 +4,7 @@ header("Access-Control-Allow-Origin: *");
 header("Access-Control-Allow-Methods: GET, POST, DELETE, OPTIONS,PUT,PATCH");
 header("Access-Control-Allow-Headers: Content-Type, Authorization");
 header("Content-Type: application/json");
+header("Content-Type: multipart/form-data");
 header('Access-Control-Allow-Headers: Access-Control-Allow-Headers,Content-Type,Access-Control-Allow-Methods, Authorization, X-Requested-With');
 
 
@@ -92,9 +93,6 @@ $routers = [
     ],
     // Cập nhật thông tin
     'PUT' => [
-        '/questions/update/(\d+)' => function ($id) use ($QuestionsController) {
-            $QuestionsController->update($id);
-        },
         '/exams/update/(\d+)' => function ($id) use ($ExamsController) {
             $ExamsController->update($id);
         },
@@ -106,6 +104,9 @@ $routers = [
     'POST' => [
         '/questions/create' => function () use ($QuestionsController) {
             $QuestionsController->create();
+        },
+        '/questions/update/(\d+)' => function ($id) use ($QuestionsController) {
+            $QuestionsController->update($id);
         },
         '/exams/create' => function () use ($ExamsController) {
             $ExamsController->create();

@@ -100,7 +100,9 @@ class BaseModel
             $query->execute($arrayData);
         } catch (Throwable $e) {
             return false;
+            // echo json_encode($e);
         }
         return true;
+        // echo json_encode(2);
     }
 }

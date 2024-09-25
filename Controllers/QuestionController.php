@@ -24,12 +24,13 @@ class QuestionsController
     }
     public function create()
     {
-        $data = json_decode(file_get_contents("php://input"), true);
-        if ($this->QuestionModel->create($data) == false) {
-            echo json_encode(['message' => "Có lỗi xảy ra !"]);
-        } else {
-            echo json_encode(['message' => "Tạo mới bài thi thành công !"]);
-        }
+        $data2 = json_decode(file_get_contents("php://input"), true);
+        $this->QuestionModel->create($data2);
+        // if ($this->QuestionModel->create($data) == false) {
+        //     echo json_encode(['message' => "Có lỗi xảy ra !"]);
+        // } else {
+        //     echo json_encode(['message' => "Tạo mới bài thi thành công !"]);
+        // }
     }
     public function getExam($id)
     {
@@ -46,11 +47,12 @@ class QuestionsController
     }
     public function update($id)
     {
-        $data = json_decode(file_get_contents("php://input"), true);
+        $data2 = json_decode(file_get_contents("php://input"), true);
         if ($id == 0) {
             echo json_encode(['message' => 'Dữ liệu bài thi không tồn tại !']);
         } else {
-            if ($this->QuestionModel->update($data, $id) == false) {
+            // $this->QuestionModel->update($data2, $id);
+            if ($this->QuestionModel->update($data2, $id) == false) {
                 echo json_encode(['message' => 'Cập nhật bài thi không thành công !']);
             } else {
                 echo json_encode(['message' => 'Cập nhật thông tin bài thi thành công !']);
@@ -63,6 +65,7 @@ class QuestionsController
         if ($id == 0) {
             echo json_encode(['message' => 'Dữ liệu bài thi không tồn tại !']);
         } else {
+            // $this->QuestionModel->delete($id);
             if ($this->QuestionModel->delete($id) == false) {
                 echo json_encode(['message' => 'Có lỗi xảy ra !']);
             } else {
