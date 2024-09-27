@@ -13,6 +13,7 @@ include_once  __DIR__ . '/../Controllers/ExamController.php';
 include_once  __DIR__ . '/../Controllers/UserController.php';
 include_once  __DIR__ . '/../Controllers/CategoryExamController.php';
 include_once  __DIR__ . '/../Controllers/ResultController.php';
+include_once  __DIR__ . '/../Controllers/CommentController.php';
 
 // Initialize the controllers
 $QuestionsController = new QuestionsController();
@@ -20,6 +21,7 @@ $ExamsController = new ExamsController();
 $UserController = new UserController();
 $Category_exam = new CategoryExamController();
 $ResultController = new ResultController();
+$CommentController = new CommentController();
 
 $methodRequest = $_SERVER['REQUEST_METHOD'];
 $UriRequest = $_SERVER['REQUEST_URI'];
@@ -77,7 +79,11 @@ $routers = [
         // lấy danh sách các bài thi đã làm của User 
         '/UserlistResult/(\d+)' => function ($id) use ($ResultController) {
             $ResultController->getResultListUser($id);
-        }
+        },
+        // Lấy danh sách bình luận của 1 bài thi
+        '/comments/(\d+)' => function ($id) use ($CommentController) {
+            $CommentController->getCommentExam($id);
+        },
     ],
     // xóa danh sách câu hỏi
     'DELETE' => [
