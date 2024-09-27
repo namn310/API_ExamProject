@@ -13,6 +13,7 @@ include_once  __DIR__ . '/../Controllers/ExamController.php';
 include_once  __DIR__ . '/../Controllers/UserController.php';
 include_once  __DIR__ . '/../Controllers/CategoryExamController.php';
 include_once  __DIR__ . '/../Controllers/ResultController.php';
+include_once  __DIR__ . '/../Controllers/CommentController.php';
 
 // Initialize the controllers
 $QuestionsController = new QuestionsController();
@@ -20,6 +21,7 @@ $ExamsController = new ExamsController();
 $UserController = new UserController();
 $Category_exam = new CategoryExamController();
 $ResultController = new ResultController();
+$CommentController = new CommentController();
 
 $methodRequest = $_SERVER['REQUEST_METHOD'];
 $UriRequest = $_SERVER['REQUEST_URI'];
@@ -77,7 +79,14 @@ $routers = [
         // lấy danh sách các bài thi đã làm của User 
         '/UserlistResult/(\d+)' => function ($id) use ($ResultController) {
             $ResultController->getResultListUser($id);
-        }
+        },
+        // Lấy danh sách bình luận của 1 bài thi
+        '/comments/(\d+)' => function ($id) use ($CommentController) {
+            $CommentController->getCommentExam($id);
+        },
+        '/child-comments/(\d+)' => function ($id) use ($CommentController) {
+            $CommentController->getChildCommentExam($id);
+        },
     ],
     // xóa danh sách câu hỏi
     'DELETE' => [
@@ -128,7 +137,10 @@ $routers = [
         },
         '/users/jwt' => function () use ($UserController) {
             $UserController->checkJWT();
-        }
+        },
+        '/comments/create' => function () use ($CommentController) {
+            $CommentController->create();
+        },
     ],
     // khi xảy ra CORS trình duyệt sẽ gửi OPTIONS (preflight request) trước khi yêu cầu thực tế đến máy chủ. Mục đích kiếm tra xem máy chủ có hỗ trợ method mà web gửi lên không
     'OPTIONS' => function () {
