@@ -25,11 +25,17 @@ class CommentController
         echo json_encode(['data' => $result]);
     }
 
+    public function getChildCommentExam($id)
+    {
+        $result = $this->CommentModel->readChildCommentsExam($id);
+        echo json_encode(['data' => $result]);
+    }
+
     public function create()
     {
         $data = json_decode(file_get_contents("php://input"), true);
         // $this->CommentModel->createExam($data);
-        if ($this->CommentModel->createExam($data) == false) {
+        if ($this->CommentModel->create($data) == false) {
             echo json_encode(['message' => "Có lỗi xảy ra !"]);
         } else {
             echo json_encode(['message' => "Tạo mới bài thi thành công !"]);

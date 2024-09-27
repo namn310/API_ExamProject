@@ -84,6 +84,9 @@ $routers = [
         '/comments/(\d+)' => function ($id) use ($CommentController) {
             $CommentController->getCommentExam($id);
         },
+        '/child-comments/(\d+)' => function ($id) use ($CommentController) {
+            $CommentController->getChildCommentExam($id);
+        },
     ],
     // xóa danh sách câu hỏi
     'DELETE' => [
@@ -131,7 +134,10 @@ $routers = [
         },
         '/users/jwt' => function () use ($UserController) {
             $UserController->checkJWT();
-        }
+        },
+        '/comments/create' => function () use ($CommentController) {
+            $CommentController->create();
+        },
     ],
     // khi xảy ra CORS trình duyệt sẽ gửi OPTIONS (preflight request) trước khi yêu cầu thực tế đến máy chủ. Mục đích kiếm tra xem máy chủ có hỗ trợ method mà web gửi lên không
     'OPTIONS' => function () {
