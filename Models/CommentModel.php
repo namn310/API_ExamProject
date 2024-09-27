@@ -35,7 +35,7 @@ class CommentModel extends BaseModel
     {
         $conn = Connection::GetConnect();
         try {
-            $query = $conn->prepare("SELECT comments.id, comments.exam_id,comments.created_at, comments.user_id, comments.comment_text, users.id, users.name FROM comments
+            $query = $conn->prepare("SELECT comments.id, comments.exam_id,comments.created_at, comments.user_id, comments.comment_text, users.id as userId, users.name FROM comments
                 inner JOIN users on comments.user_id = users.id
                 WHERE exam_id=:id AND parent_id IS NULL");
             $query->execute(['id' => $id]);
@@ -51,7 +51,7 @@ class CommentModel extends BaseModel
         try {
             $query = $conn->prepare("SELECT comments.id, comments.exam_id,comments.created_at,comments.parent_id, comments.user_id, comments.comment_text, users.id, users.name FROM comments
                 inner JOIN users on comments.user_id = users.id
-                WHERE exam_id=:id AND parent_id=1");
+                WHERE exam_id=:id AND parent_id>0");
             $query->execute(['id' => $id]);
         } catch (Throwable $e) {
             return null;
