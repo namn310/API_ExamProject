@@ -142,4 +142,26 @@ class UserModel extends BaseModel
             echo json_encode(['message' => "Có lỗi xảy ra ". $e]);
         }
     }
+    public function resetPasswordModel(){
+        $key = getenv('KEY');
+        $data = json_decode(file_get_contents("php://input"), true);
+        $conn = Connection::GetConnect();
+        $token = $data['token'];
+        $newPassword = md5($data['newPassword']);
+        try {
+            $decoded = JWT::decode($token, $key, ['HS256']);
+            $userId = $decoded->data->id;
+            $query = $conn->prepare("select id from users where id=:id");
+            $query->execute(['id' => $userId]);
+            if ($query->rowCount() > 0){
+                $updated = $conn->prepare("update users set password=:password where id=:id ");
+                $updated->execute(['password' => $newPassword, 'id' => $userId]);
+                echo json_encode(['message' => 'Đổi mật khẩu thành công !']);
+            } else {
+                echo json_encode(['message' => 'Có lỗi xảy ra !']);
+            }
+        } catch (Exception $e){
+            echo json_encode(['message' => 'Có lỗi xảy ra !' . $e->getMessage()]);
+        }
+    }
 }

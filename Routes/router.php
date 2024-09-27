@@ -98,6 +98,9 @@ $routers = [
         },
         '/users/update/(\d+)' => function ($id) use ($UserController) {
             $UserController->update($id);
+        },
+        'users/reset-password' => function () use ($UserController) {
+            $UserController->resetPassword();
         }
     ],
     // Tạo mới thông tin
