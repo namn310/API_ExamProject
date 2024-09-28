@@ -20,6 +20,8 @@ class QuestionModel extends BaseModel
             // Thêm từng giá trị vào mảng $data với định dạng key => value
             $data[$key] = $value;
         }
+        $numberAnswer = json_decode($_POST['answerlist'], true);
+        $conn = Connection::GetConnect();
         if (isset($_FILES['image'])) {
             $folder = __DIR__ . '/../assets/image/Question/';
             if (!is_dir($folder)) {
@@ -39,10 +41,26 @@ class QuestionModel extends BaseModel
         // // lấy giá trị từ data
         $value = ":" . implode(",:", array_keys($data));
         // // prepare query
-        $conn = Connection::GetConnect();
         $query = $conn->prepare("insert into $this->table ($columns) values ($value) ");
         try {
             $query->execute($data);
+            $LastInsertId = $conn->lastInsertId();
+            foreach ($numberAnswer as $index => $value) {
+                if (isset($_FILES["answerImage_$index"])) {
+                    $folderImgAnswer = __DIR__ . '/../assets/image/AnswerQuestion/';
+                    if (!is_dir($folderImgAnswer)) {
+                        mkdir($folderImgAnswer, 0777, true);  // Tạo thư mục với quyền ghi đầy đủ
+                    }
+                    // tên file ảnh
+                    $imageQuestionName = time() . '_' . basename($_FILES["answerImage_$index"]['name']);
+                    $upload_file_ImgAnswer = $folderImgAnswer . $imageQuestionName;
+                    // lưu file vào đường dẫn
+                    move_uploaded_file($_FILES["answerImage_$index"]['tmp_name'], $upload_file_ImgAnswer);
+                    // thêm ảnh vào bảng
+                    $queryImage = $conn->prepare("insert into image_answers set idQues=:idQues,imageAns=:image,stt=:stt");
+                    $queryImage->execute(['idQues' => $LastInsertId, 'image' => $imageQuestionName, 'stt' => $index]);
+                }
+            }
         } catch (Throwable $e) {
             echo json_encode(['message' => "Có lỗi xảy ra " . $e]);
         }
@@ -52,26 +70,49 @@ class QuestionModel extends BaseModel
     {
         return $this->QuestionModel->read($id);
     }
+    // lấy ảnh của câu trả lời
+    public function getImageAnswerModel($id)
+    {
+        $conn = Connection::GetConnect();
+        $query = $conn->prepare("select * from image_answers where idQues=:id");
+        $query->execute(['id' => $id]);
+        return $query->fetchAll();
+    }
     public function delete($id)
     {
         try {
-            // xóa hình ảnh câu hỏi nếu có
-            $folder = __DIR__ . '/../assets/image/Question/';
-            $conn = Connection::GetConnect();
-            $query2 = $conn->prepare("select image from $this->table where id=:id");
-            $query2->execute(['id' => $id]);
-            $result = $query2->fetch();
-            $img = $result->image;
-            if (!empty($img)) {
-                $oldFileImage = $folder . $img;
-                if (file_exists($oldFileImage)) {
-                    unlink($oldFileImage);
+        // xóa hình ảnh câu hỏi nếu có
+        // Folder ảnh đề bài
+        $folder = __DIR__ . '/../assets/image/Question/';
+        // Folder ảnh câu hỏi
+        $folderImgAnswer = __DIR__ . '/../assets/image/AnswerQuestion/';
+        $conn = Connection::GetConnect();
+        // Xóa ảnh các câu trả lời của câu hỏi
+        $query3 = $conn->prepare("select imageAns from image_answers where idQues=:id");
+        $query3->execute(['id' => $id]);
+        foreach ($query3->fetchAll() as $row) {
+            $oldImg = $row->imageAns;
+            if (!empty($oldImg)) {
+                $oldFileImageAnswer = $folderImgAnswer . $oldImg;
+                if (file_exists($oldFileImageAnswer)) {
+                    unlink($oldFileImageAnswer);
                 }
             }
-
-            // xóa câu hỏi
-            $query = $conn->prepare("delete from $this->table where id=:id");
-            $query->execute(['id' => $id]);
+        }
+        // Xóa ảnh đề bài của câu hỏi
+        $query2 = $conn->prepare("select image from $this->table where id=:id");
+        $query2->execute(['id' => $id]);
+        $result = $query2->fetch();
+        $img = $result->image;
+        if (!empty($img)) {
+            $oldFileImage = $folder . $img;
+            if (file_exists($oldFileImage)) {
+                unlink($oldFileImage);
+            }
+        }
+        // xóa câu hỏi
+        $query = $conn->prepare("delete from $this->table where id=:id");
+        $query->execute(['id' => $id]);
         } catch (Throwable $e) {
             return false;
         }
@@ -84,9 +125,13 @@ class QuestionModel extends BaseModel
             // Thêm từng giá trị vào mảng $data với định dạng key => value
             $data[$key] = $value;
         }
-        $folder = __DIR__ . '/../assets/image/Question/';
-        if (isset($_FILES['image'])) {
+        $numberAnswer = json_decode($_POST['answerlist'], true);
 
+        // link file ảnh câu hỏi
+        $folder = __DIR__ . '/../assets/image/Question/';
+        // link file ảnh câu trả lời
+        $folderImgAnswer = __DIR__ . '/../assets/image/AnswerQuestion/';
+        if (isset($_FILES['image'])) {
             if (!is_dir($folder)) {
                 mkdir($folder, 0777, true);  // Tạo thư mục với quyền ghi đầy đủ
             }
@@ -113,7 +158,7 @@ class QuestionModel extends BaseModel
         // echo $setClause;
         try {
             $conn = Connection::GetConnect();
-            $query2 = $conn->prepare("select image from $this->table where id=:id");
+            $query2 = $conn->prepare("select * from $this->table where id=:id LIMIT 1");
             $query2->execute(['id' => $id]);
             $result = $query2->fetch();
             $img = $result->image;
@@ -126,12 +171,57 @@ class QuestionModel extends BaseModel
             //merge mảng để execute query
             $arrayData = array_merge($data, $arrayId);
             $query->execute($arrayData);
+            // duyệt mảng ảnh câu trả lời nếu tồn tại thì tiến hành update trong db và file ảnh
+            foreach ($numberAnswer as $index => $value) {
+                // kiểm tra xem có tồn tại file ảnh post lên không
+                // nếu có thì tiến hành update
+                if (isset($_FILES["answerImage_$index"])) {
+                    // lấy ảnh từ bảng
+                    $getOldImageAnswer = $conn->prepare("select imageAns from image_answers where idQues=:id and stt=:stt");
+                    $getOldImageAnswer->execute(['id' => $id, 'stt' => $index]);
+                    $result = $getOldImageAnswer->fetch();
+                    $OldImageAnswer = $result->imageAns;
+                    $OldImageAnswerFile = $folderImgAnswer . $OldImageAnswer;
+                    if (!is_dir($folderImgAnswer)) {
+                        mkdir($folderImgAnswer, 0777, true);  // Tạo thư mục với quyền ghi đầy đủ
+                    }
+                    // kiểm tra xem trong file có ảnh này chưa nếu có thì tiến hành xóa để update ảnh mới
+                    if (file_exists($OldImageAnswerFile)) {
+                        unlink($OldImageAnswerFile);
+                    }
+                    // update hình ảnh mới
+                    $imageQuestionName = time() . '_' . basename($_FILES["answerImage_$index"]['name']);
+                    // tên file ảnh
+                    $upload_file_ImgAnswer = $folderImgAnswer . $imageQuestionName;
+                    move_uploaded_file($_FILES["answerImage_$index"]['tmp_name'], $upload_file_ImgAnswer);
+                    // cập nhật lại hình ảnh trong table
+                    $queryImage2 = $conn->prepare("update image_answers set imageAns=:imageAns where idQues=:idQues and stt=:stt");
+                    $queryImage2->execute(['idQues' => $id, 'imageAns' => $imageQuestionName, 'stt' => $index]);
+                }
+                // Nếu không có thì người dùng đã xóa ảnh câu trả lời => tiến hành xóa ảnh trong folder và table
+                else {
+                    // // lấy ảnh từ bảng
+                    // $getOldImageAnswer = $conn->prepare("select imageAns from image_answers where idQues=:id and stt=:stt");
+                    // $getOldImageAnswer->execute(['id' => $id, 'stt' => $index]);
+                    // $result = $getOldImageAnswer->fetch();
+                    // $OldImageAnswer = $result->imageAns;
+                    // $OldImageAnswerFile = $folderImgAnswer . $OldImageAnswer;
+                    // if (file_exists($OldImageAnswerFile)) {
+                    //     unlink($OldImageAnswerFile);
+                    // }
+                    // // xóa ảnh của câu trả lời
+                    // $query3 = $conn->prepare("delete from image_answers where idQues=:id and stt=:stt");
+                    // $query3->execute(['id'=>$id,'stt'=>$index]);
+                }
+            }
+            // Xóa ảnh của đề bài
             // nếu sau khi update người dùng xóa ảnh của câu hỏi đi thì xóa ảnh của câu hỏi trong folder
-            $query3 = $conn->prepare("select image from $this->table where id=:id");
-            $query3->execute(['id' => $id]);
-            $result = $query3->fetch();
+            $query4 = $conn->prepare("select image from $this->table where id=:id");
+            $query4->execute(['id' => $id]);
+            $result = $query4->fetch();
             $img2 = $result->image;
             if (!empty($img2)) {
+                // $oldFileImage = $folder . $img;
                 if (file_exists($oldFileImage)) {
                     unlink($oldFileImage);
                 }

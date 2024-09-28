@@ -36,6 +36,10 @@ $routers = [
         '/questions/detail/(\d+)' => function ($id) use ($QuestionsController) {
             $QuestionsController->detail($id);
         },
+        // lấy hình ảnh của các câu trả lời
+        '/questions/imageAnswer/(\d+)' => function ($id) use ($QuestionsController) {
+            $QuestionsController->getImageAnswer($id);
+        },
         '/questions/userCreate' => function () use ($QuestionsController) {
             $QuestionsController->getUser();
         },

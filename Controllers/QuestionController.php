@@ -22,6 +22,11 @@ class QuestionsController
         $result = $this->QuestionModel->read($id);
         echo json_encode(['data' => $result]);
     }
+    // lấy ảnh của câu hỏi
+    public function getImageAnswer($id){
+        $result = $this->QuestionModel->getImageAnswerModel($id);
+        echo json_encode(['data' => $result]);
+    }
     public function create()
     {
         $data2 = json_decode(file_get_contents("php://input"), true);
@@ -53,9 +58,9 @@ class QuestionsController
         } else {
             // $this->QuestionModel->update($data2, $id);
             if ($this->QuestionModel->update($data2, $id) == false) {
-                echo json_encode(['message' => 'Cập nhật bài thi không thành công !']);
+                echo json_encode(['message' => 'Cập nhật câu hỏi không thành công !']);
             } else {
-                echo json_encode(['message' => 'Cập nhật thông tin bài thi thành công !']);
+                echo json_encode(['message' => 'Cập nhật thông tin câu hỏi thành công !']);
             }
         }
     }
