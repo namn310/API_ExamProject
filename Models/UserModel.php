@@ -139,28 +139,38 @@ class UserModel extends BaseModel
                 echo json_encode(['message' => 'Đăng nhập thất bại ! Tài khoản hoặc mật khẩu không chính xác']);
             }
         } catch (Throwable $e) {
-            echo json_encode(['message' => "Có lỗi xảy ra ". $e]);
+            echo json_encode(['message' => "Có lỗi xảy ra " . $e]);
         }
     }
-    public function resetPasswordModel(){
+    public function resetPasswordModel($data)
+    {
         $key = getenv('KEY');
-        $data = json_decode(file_get_contents("php://input"), true);
         $conn = Connection::GetConnect();
         $token = $data['token'];
-        $newPassword = md5($data['newPassword']);
+        $newPassword = md5($data['new_password']);
+        $oldPasswordInput = md5($data['old_password']);
         try {
-            $decoded = JWT::decode($token, $key, ['HS256']);
+            $decoded = JWT::decode($token, new Key($key, 'HS256'));
+            // echo json_encode($decoded->data->id);
             $userId = $decoded->data->id;
-            $query = $conn->prepare("select id from users where id=:id");
-            $query->execute(['id' => $userId]);
-            if ($query->rowCount() > 0){
-                $updated = $conn->prepare("update users set password=:password where id=:id ");
-                $updated->execute(['password' => $newPassword, 'id' => $userId]);
-                echo json_encode(['message' => 'Đổi mật khẩu thành công !']);
+            $userEmail = $decoded->data->email;
+            $query = $conn->prepare("select id,password from $this->table where id=:id and email=:email");
+            $query->execute(['id' => $userId, 'email' => $userEmail]);
+            if ($query->rowCount() > 0) {
+                $result = $query->fetch();
+                $oldPassword = $result->password;
+                // so sánh mật khẩu cũ nhập vào với mật khẩu trong database
+                if ($oldPassword === $oldPasswordInput) {
+                    $updated = $conn->prepare("update $this->table set password=:password where id=:id and email=:email ");
+                    $updated->execute(['password' => $newPassword, 'id' => $userId,'email'=>$userEmail]);
+                    echo json_encode(['message' => 'Đổi mật khẩu thành công !']);
+                } else {
+                    echo json_encode(['message' => 'Mật khẩu cũ không chính xác']);
+                }
             } else {
-                echo json_encode(['message' => 'Có lỗi xảy ra !']);
+                echo json_encode(['message' => 'Không tồn tại người dùng']);
             }
-        } catch (Exception $e){
+        } catch (Exception $e) {
             echo json_encode(['message' => 'Có lỗi xảy ra !' . $e->getMessage()]);
         }
     }
