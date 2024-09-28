@@ -162,13 +162,11 @@ class UserModel extends BaseModel
                 // so sánh mật khẩu cũ nhập vào với mật khẩu trong database
                 if ($oldPassword === $oldPasswordInput) {
                     $updated = $conn->prepare("update $this->table set password=:password where id=:id and email=:email ");
-                    $updated->execute(['password' => $newPassword, 'id' => $userId,'email'=>$userEmail]);
+                    $updated->execute(['password' => $newPassword, 'id' => $userId, 'email' => $userEmail]);
                     echo json_encode(['message' => 'Đổi mật khẩu thành công !']);
                 } else {
                     echo json_encode(['message' => 'Mật khẩu cũ không chính xác']);
                 }
-            } else {
-                echo json_encode(['message' => 'Không tồn tại người dùng']);
             }
         } catch (Exception $e) {
             echo json_encode(['message' => 'Có lỗi xảy ra !' . $e->getMessage()]);
