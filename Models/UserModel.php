@@ -147,12 +147,14 @@ class UserModel extends BaseModel
         $data = json_decode(file_get_contents("php://input"), true);
         $conn = Connection::GetConnect();
         $token = $data['token'];
+        $oldPassword = md5($data['oldPassword']);
         $newPassword = md5($data['newPassword']);
         try {
-            $decoded = JWT::decode($token, $key, ['HS256']);
+            $decoded = JWT::decode($token, new Key($key, 'HS256'));
             $userId = $decoded->data->id;
-            $query = $conn->prepare("select id from users where id=:id");
+            $query = $conn->prepare("select password from users where id=:id");
             $query->execute(['id' => $userId]);
+            $user = $query->fetch(PDO::FETCH_ASSOC);
             if ($query->rowCount() > 0){
                 $updated = $conn->prepare("update users set password=:password where id=:id ");
                 $updated->execute(['password' => $newPassword, 'id' => $userId]);
