@@ -72,10 +72,14 @@ class ExamModel extends BaseModel
     {
         $conn=Connection::GetConnect();
         try {
+            // $query = $conn->prepare("SELECT questions.image,questions.id, questions.class, questions.Subject, questions.title, questions.answerlist, questions.correctAns
+            //             FROM questions
+            //             INNER JOIN questions_exam on questions.id = questions_exam.id_ques
+            //             INNER JOIN exams on questions_exam.id_exam = exams.id where exams.id=:id");
             $query = $conn->prepare("SELECT questions.image,questions.id, questions.class, questions.Subject, questions.title, questions.answerlist, questions.correctAns
-                        FROM questions
-                        INNER JOIN questions_exam on questions.id = questions_exam.id_ques
-                        INNER JOIN exams on questions_exam.id_exam = exams.id where exams.id=:id");
+                        FROM exams
+                        INNER JOIN questions_exam on exams.id = questions_exam.id_exam
+                        INNER JOIN questions on questions_exam.id_ques = questions.id where exams.id=:id");
             $query->execute(['id' => $id]);
         } catch (Throwable $e) {
             return null;
