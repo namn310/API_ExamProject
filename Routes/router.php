@@ -142,6 +142,9 @@ $routers = [
         '/users/jwt' => function () use ($UserController) {
             $UserController->checkJWT();
         },
+        '/users/forgot-password' => function () use ($UserController) {
+            $UserController->forgotPassword();
+        },
         '/comments/create' => function () use ($CommentController) {
             $CommentController->create();
         },

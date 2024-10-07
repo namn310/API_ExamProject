@@ -2,6 +2,8 @@
 include_once __DIR__ . '/../Models/BaseModel.php';
 require 'vendor/autoload.php';
 
+use PHPMailer\PHPMailer\PHPMailer;
+use PHPMailer\PHPMailer\Exception;
 use Firebase\JWT\JWT;
 use Firebase\JWT\Key;
 
@@ -170,6 +172,55 @@ class UserModel extends BaseModel
             }
         } catch (Exception $e) {
             echo json_encode(['message' => 'Có lỗi xảy ra !' . $e->getMessage()]);
+        }
+    }
+    public function forgotPasswordModel($data)
+    {
+        $conn = Connection::GetConnect();
+        $key = getenv('KEY');
+        try {
+            $query = $conn->prepare("select id,email from $this->table  where id=:id and email=:email");
+            $query->execute( ['id' => $data['id'], 'email' => $data['email']]);
+            if ($query->rowCount()>0){
+                $user = $query->fetch(PDO::FETCH_ASSOC);
+                $userId = $user->id;
+                $userEmail = $user->email;
+                $payload = [
+                    'iat' => $timeCreate,
+                    'exp' => $timeExpire,
+                    'data' => [
+                        'id' => $userId,
+                        'email' => $userEmail,
+                    ]
+                ];
+                $resetLink = "http://localhost:8080/users/reset-passwordForgot";
+                $this->EmailReset($user['email'], $resetLink);
+                echo json_encode(['message' => 'Email đã gửi !']);
+            } else {
+                echo json_encode(['message' => 'Email không tồn tại !']);
+            }
+        } catch (Throwable $e) {
+            echo json_encode(['message' => 'Có lỗi xảy ra !' . $e]);
+        }
+    }
+    private function EmailReset(){
+        $mail = new PHPMailer(true);
+        try{
+            $mail->isSMTP();
+            $mail->Host='smtp.gmail.com';
+            $mail->SMTPAuth = true;
+            $mail->Username = 'manhnq22@gmail.com';
+            $mail->Password = 'qytm ksjh npzi xjts';
+            $mail->SMTPSecure = 'tls';
+            $mail->Port = 587;
+            $mail->setFrom('manhnq22@gmail.com');
+            $mail->addAddress($email);
+            $mail->isHTML(true);
+            $mail->Subject = 'Khôi phục mật khẩu';
+            $mail->Body = "Nhấn vào <a href='$resetLink'>liên kết này</a> để khôi phục mật khẩu của bạn.";
+            $mail->send();
+        } catch (Exception $e) {
+            echo json_encode(['message' => 'Không thể gửi email. Lỗi: ' . $mail->ErrorInfo]);
         }
     }
 }
