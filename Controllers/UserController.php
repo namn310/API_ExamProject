@@ -67,6 +67,10 @@ class UserController
         $data = json_decode(file_get_contents("php://input"), true);
         $this->UserModel->resetPasswordModel($data);
     }
+    public function forgotPassword() {
+        $data = json_decode(file_get_contents("php://input"), true);
+        $this->UserModel->forgotPasswordModel($data);
+    }
     public function checkJWT()
     {
         // $this->UserModel->checkToken();
