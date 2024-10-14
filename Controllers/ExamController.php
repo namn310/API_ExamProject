@@ -69,4 +69,19 @@ class ExamsController
         $result = $this->ExamModel->readCategoryExam($id);
         echo json_encode(['data' => $result]);
     }
+    public function getExamByIdCat($id)
+    {
+        $result = $this->ExamModel->getExamByCatModel($id);
+        echo json_encode(['data' => $result]);
+    }
+    // lấy số lượng người làm sai các câu hỏi trong bài kiểm tra
+    public function getNumberDoWrong($id)
+    {
+        $result = $this->ExamModel->getNumberDoWrongModel($id);
+        if ($result == null) {
+            echo json_encode(null);
+        } else {
+            echo json_encode($result);
+        }
+    }
 }

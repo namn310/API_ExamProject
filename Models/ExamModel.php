@@ -15,14 +15,14 @@ class ExamModel extends BaseModel
     }
     public function createExam($data)
     {
-        $conn=Connection::GetConnect();
+        $conn = Connection::GetConnect();
         $columns = implode(",", array_keys($data));
         // Lấy giá trị từ data, dùng để prepare statement
         $value = ":" . implode(",:", array_keys($data));
         // Chuẩn bị câu lệnh SQL để chèn kỳ thi mới vào bảng exams
         $query = $conn->prepare("INSERT INTO exams ($columns) VALUES ($value)");
         // echo json_encode($data['category']);
-        $cat=$data['category'];
+        $cat = $data['category'];
         try {
             // Thực thi câu lệnh
             $query->execute($data);
@@ -51,7 +51,6 @@ class ExamModel extends BaseModel
         } catch (Throwable $e) {
             // Xử lý lỗi nếu có
             return false;
-           
         }
 
         return true;
@@ -70,7 +69,7 @@ class ExamModel extends BaseModel
     }
     public function readQuestionExam($id)
     {
-        $conn=Connection::GetConnect();
+        $conn = Connection::GetConnect();
         try {
             $query = $conn->prepare("SELECT questions.image,questions.id, questions.class, questions.Subject, questions.title, questions.answerlist, questions.correctAns
                         FROM questions
@@ -95,5 +94,28 @@ class ExamModel extends BaseModel
             return null;
         }
         return $query->fetch();
+    }
+    public function getExamByCatModel($id)
+    {
+        $conn = Connection::GetConnect();
+        try {
+            $query = $conn->prepare("SELECT * from $this->table WHERE category=:id");
+            $query->execute(['id' => $id]);
+        } catch (Throwable $e) {
+            return null;
+        }
+        return $query->fetch();
+    }
+    // lấy số lượng người làm sai câu hỏi 
+    public function getNumberDoWrongModel($id)
+    {
+        $conn = Connection::GetConnect();
+        try {
+            $query = $conn->prepare("SELECT result_detail.id_question,result_detail.number_do_wrong from result_detail INNER JOIN results on result_detail.id_results = results.id where results.id_exam=:id  ");
+            $query->execute(['id' => $id]);
+        } catch (Throwable $e) {
+            return null;
+        }
+        return $query->fetchAll();
     }
 }

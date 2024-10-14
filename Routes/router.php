@@ -54,6 +54,10 @@ $routers = [
         '/exams/questions-exams/(\d+)' => function ($id) use ($ExamsController) {
             $ExamsController->getQuestionsExam($id);
         },
+        // lấy số lượng người làm sai câu hỏi
+        '/exams/count_do_wrong/(\d+)' => function ($id) use ($ExamsController) {
+            $ExamsController->getNumberDoWrong($id);
+        },
         '/users' => function () use ($UserController) {
             $UserController->index();
         },
@@ -68,6 +72,10 @@ $routers = [
         },
         '/category-exam/(\d+)' => function ($id) use ($ExamsController) {
             $ExamsController->getCategoryExam($id);
+        },
+        // lấy exam theo category
+        '/exam/category/(\d+)' => function ($id) use ($ExamsController) {
+            $ExamsController->getExamByIdCat($id);
         },
         '/result' => function () use ($ResultController) {
             $ResultController->index();
