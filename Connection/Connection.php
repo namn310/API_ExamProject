@@ -1,5 +1,5 @@
 <?php
-class Connection
+class ConnectionDB
 {
     public static function loadEnv($path)
     {

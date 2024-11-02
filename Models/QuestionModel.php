@@ -21,7 +21,7 @@ class QuestionModel extends BaseModel
             $data[$key] = $value;
         }
         $numberAnswer = json_decode($_POST['answerlist'], true);
-        $conn = Connection::GetConnect();
+        $conn = ConnectionDB::GetConnect();
         if (isset($_FILES['image'])) {
             $folder = __DIR__ . '/../assets/image/Question/';
             if (!is_dir($folder)) {
@@ -73,7 +73,7 @@ class QuestionModel extends BaseModel
     // lấy ảnh của câu trả lời
     public function getImageAnswerModel($id)
     {
-        $conn = Connection::GetConnect();
+        $conn = ConnectionDB::GetConnect();
         $query = $conn->prepare("select * from image_answers where idQues=:id");
         $query->execute(['id' => $id]);
         return $query->fetchAll();
@@ -81,38 +81,38 @@ class QuestionModel extends BaseModel
     public function delete($id)
     {
         try {
-        // xóa hình ảnh câu hỏi nếu có
-        // Folder ảnh đề bài
-        $folder = __DIR__ . '/../assets/image/Question/';
-        // Folder ảnh câu hỏi
-        $folderImgAnswer = __DIR__ . '/../assets/image/AnswerQuestion/';
-        $conn = Connection::GetConnect();
-        // Xóa ảnh các câu trả lời của câu hỏi
-        $query3 = $conn->prepare("select imageAns from image_answers where idQues=:id");
-        $query3->execute(['id' => $id]);
-        foreach ($query3->fetchAll() as $row) {
-            $oldImg = $row->imageAns;
-            if (!empty($oldImg)) {
-                $oldFileImageAnswer = $folderImgAnswer . $oldImg;
-                if (file_exists($oldFileImageAnswer)) {
-                    unlink($oldFileImageAnswer);
+            // xóa hình ảnh câu hỏi nếu có
+            // Folder ảnh đề bài
+            $folder = __DIR__ . '/../assets/image/Question/';
+            // Folder ảnh câu hỏi
+            $folderImgAnswer = __DIR__ . '/../assets/image/AnswerQuestion/';
+            $conn = ConnectionDB::GetConnect();
+            // Xóa ảnh các câu trả lời của câu hỏi
+            $query3 = $conn->prepare("select imageAns from image_answers where idQues=:id");
+            $query3->execute(['id' => $id]);
+            foreach ($query3->fetchAll() as $row) {
+                $oldImg = $row->imageAns;
+                if (!empty($oldImg)) {
+                    $oldFileImageAnswer = $folderImgAnswer . $oldImg;
+                    if (file_exists($oldFileImageAnswer)) {
+                        unlink($oldFileImageAnswer);
+                    }
                 }
             }
-        }
-        // Xóa ảnh đề bài của câu hỏi
-        $query2 = $conn->prepare("select image from $this->table where id=:id");
-        $query2->execute(['id' => $id]);
-        $result = $query2->fetch();
-        $img = $result->image;
-        if (!empty($img)) {
-            $oldFileImage = $folder . $img;
-            if (file_exists($oldFileImage)) {
-                unlink($oldFileImage);
+            // Xóa ảnh đề bài của câu hỏi
+            $query2 = $conn->prepare("select image from $this->table where id=:id");
+            $query2->execute(['id' => $id]);
+            $result = $query2->fetch();
+            $img = $result->image;
+            if (!empty($img)) {
+                $oldFileImage = $folder . $img;
+                if (file_exists($oldFileImage)) {
+                    unlink($oldFileImage);
+                }
             }
-        }
-        // xóa câu hỏi
-        $query = $conn->prepare("delete from $this->table where id=:id");
-        $query->execute(['id' => $id]);
+            // xóa câu hỏi
+            $query = $conn->prepare("delete from $this->table where id=:id");
+            $query->execute(['id' => $id]);
         } catch (Throwable $e) {
             return false;
         }
@@ -157,7 +157,7 @@ class QuestionModel extends BaseModel
         // ví dụ chuỗi string sẽ có dạng name=:name,....
         // echo $setClause;
         try {
-            $conn = Connection::GetConnect();
+            $conn = ConnectionDB::GetConnect();
             $query2 = $conn->prepare("select * from $this->table where id=:id LIMIT 1");
             $query2->execute(['id' => $id]);
             $result = $query2->fetch();
@@ -235,7 +235,7 @@ class QuestionModel extends BaseModel
     }
     public function getUserCreate()
     {
-        $conn = Connection::GetConnect();
+        $conn = ConnectionDB::GetConnect();
         try {
             $query = $conn->prepare("select name,id from users where role=:role");
             $query->execute(['role' => 'admin']);

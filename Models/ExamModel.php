@@ -15,7 +15,7 @@ class ExamModel extends BaseModel
     }
     public function createExam($data)
     {
-        $conn = Connection::GetConnect();
+        $conn = ConnectionDB::GetConnect();
         $columns = implode(",", array_keys($data));
         // Lấy giá trị từ data, dùng để prepare statement
         $value = ":" . implode(",:", array_keys($data));
@@ -69,7 +69,7 @@ class ExamModel extends BaseModel
     }
     public function readQuestionExam($id)
     {
-        $conn = Connection::GetConnect();
+        $conn = ConnectionDB::GetConnect();
         try {
             // $query = $conn->prepare("SELECT questions.image,questions.id, questions.class, questions.Subject, questions.title, questions.answerlist, questions.correctAns
             //             FROM questions
@@ -88,7 +88,7 @@ class ExamModel extends BaseModel
     }
     public function readCategoryExam($id)
     {
-        $conn = Connection::GetConnect();
+        $conn = ConnectionDB::GetConnect();
         try {
             $query = $conn->prepare("SELECT category_exams.title FROM category_exams
                 INNER JOIN exams on category_exams.id = exams.category
@@ -101,7 +101,7 @@ class ExamModel extends BaseModel
     }
     public function getExamByCatModel($id)
     {
-        $conn = Connection::GetConnect();
+        $conn = ConnectionDB::GetConnect();
         try {
             $query = $conn->prepare("SELECT * from $this->table WHERE category=:id");
             $query->execute(['id' => $id]);
@@ -113,7 +113,7 @@ class ExamModel extends BaseModel
     // lấy số lượng người làm sai câu hỏi 
     public function getNumberDoWrongModel($id)
     {
-        $conn = Connection::GetConnect();
+        $conn = ConnectionDB::GetConnect();
         try {
             $query = $conn->prepare("SELECT result_detail.id_question,result_detail.number_do_wrong from result_detail INNER JOIN results on result_detail.id_results = results.id where results.id_exam=:id  ");
             $query->execute(['id' => $id]);

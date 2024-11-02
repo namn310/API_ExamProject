@@ -33,7 +33,7 @@ class CommentModel extends BaseModel
 
     public function readCommentsExam($id)
     {
-        $conn = Connection::GetConnect();
+        $conn = ConnectionDB::GetConnect();
         try {
             $query = $conn->prepare("SELECT comments.id, comments.exam_id,comments.created_at, comments.user_id, comments.comment_text, users.id as userId, users.name FROM comments
                 inner JOIN users on comments.user_id = users.id
@@ -47,7 +47,7 @@ class CommentModel extends BaseModel
 
     public function readChildCommentsExam($id)
     {
-        $conn = Connection::GetConnect();
+        $conn = ConnectionDB::GetConnect();
         try {
             $query = $conn->prepare("SELECT comments.id, comments.exam_id,comments.created_at,comments.parent_id, comments.user_id, comments.comment_text, users.id, users.name FROM comments
                 inner JOIN users on comments.user_id = users.id

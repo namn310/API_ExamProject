@@ -1,6 +1,7 @@
 <?php
 include_once __DIR__ . "/../Connection/Connection.php";
-require 'vendor/autoload.php';
+require __DIR__ . '/../vendor/autoload.php';
+
 use Firebase\JWT\JWT;
 use Firebase\JWT\Key;
 
@@ -11,7 +12,7 @@ class BaseModel
     public function __construct($table)
     {
         $this->table = $table;
-        $conn = Connection::GetConnect();
+        $conn = ConnectionDB::GetConnect();
         $this->conn = $conn;
     }
     // lấy dữ liệu
@@ -43,6 +44,10 @@ class BaseModel
     // create dữ liệu
     public function create($data)
     {
+        // kiểm tra dữ liệu tránh truyền script vào input
+        foreach ($data as $key => $value) {
+            $data[$key] = htmlspecialchars($value, ENT_QUOTES, 'UTF-8');
+        }
         // $data = json_decode(file_get_contents("php://input"), true);
         // lấy tên cột từ data;
         $columns = implode(",", array_keys($data));
@@ -83,6 +88,10 @@ class BaseModel
     // update data 
     public function update($data, $id)
     {
+        // kiểm tra dữ liệu tránh truyền script vào input
+        // foreach ($data as $key => $value) {
+        //     $data[$key] = htmlspecialchars($value, ENT_QUOTES, 'UTF-8');
+        // }
         $string = "";
         $columns = implode(",", array_keys($data));
         $columns_set_name = explode(',', $columns);

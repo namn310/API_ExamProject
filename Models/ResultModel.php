@@ -22,7 +22,7 @@ class ResultModel extends BaseModel
     // Lấy danh sách các bài làm của user
     public function getUserResultListModel($id)
     {
-        $conn = Connection::GetConnect();
+        $conn = ConnectionDB::GetConnect();
         $page = isset($_GET['page']) ? $_GET['page'] : 1;
         $limit = 10;
         $offset = ($page - 1) * $limit;
@@ -59,7 +59,7 @@ class ResultModel extends BaseModel
     }
     public function getReviewModel($id)
     {
-        $conn = Connection::GetConnect();
+        $conn = ConnectionDB::GetConnect();
         try {
             $query = $conn->prepare("select id_question,answer from $this->tableResultDetail where id_results=:id_results order by id_question");
             $query->execute(['id_results' => $id]);
@@ -70,7 +70,7 @@ class ResultModel extends BaseModel
     }
     public function createResultExam($data)
     {
-        $conn = Connection::GetConnect();
+        $conn = ConnectionDB::GetConnect();
         // $data = json_decode(file_get_contents("php://input"), true);
         // lấy tên cột từ data;
         // $answer = array_pop($data);
