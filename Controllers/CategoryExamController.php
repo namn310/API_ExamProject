@@ -21,8 +21,8 @@ class CategoryExamController
     }
     public function create()
     {
-        $checkToken = CheckToken::checkToken();
-        if ($checkToken === true) {
+        // $checkToken = CheckToken::checkToken();
+        // if ($checkToken === true) {
             $data = json_decode(file_get_contents("php://input"), true);
             // kiểm tra dữ liệu tránh truyền script vào input
             foreach ($data as $key => $value) {
@@ -33,14 +33,14 @@ class CategoryExamController
             } else {
                 echo json_encode(['message' => "Tạo mới danh mục bài thi thành công !"]);
             }
-        } else {
-            echo json_encode(['message' => "Token không hợp lệ"]);
-        }
+        // } else {
+        //     echo json_encode(['message' => "Token không hợp lệ"]);
+        // }
     }
     public function update($id)
     {
-        $checkToken = CheckToken::checkToken();
-        if ($checkToken === true) {
+        // $checkToken = CheckToken::checkToken();
+        // if ($checkToken === true) {
             $data = json_decode(file_get_contents("php://input"), true);
             // kiểm tra dữ liệu tránh truyền script vào input
             foreach ($data as $key => $value) {
@@ -55,15 +55,15 @@ class CategoryExamController
                     echo json_encode(['message' => 'Cập nhật danh mục bài thi thành công !']);
                 }
             }
-        } else {
-            echo json_encode(['message' => "Token không hợp lệ"]);
-        }
+        // } else {
+        //     echo json_encode(['message' => "Token không hợp lệ"]);
+        // }
     }
 
     public function delete($id)
     {
-        $checkToken = CheckToken::checkToken();
-        if ($checkToken === true) {
+        // $checkToken = CheckToken::checkToken();
+        // if ($checkToken === true) {
             if ($id == 0) {
                 echo json_encode(['message' => 'Danh mục không tồn tại !']);
             } else {
@@ -73,9 +73,9 @@ class CategoryExamController
                     echo json_encode(['message' => 'Xóa danh mục thành công !']);
                 }
             }
-        } else {
-            echo json_encode(['message' => "Token không hợp lệ"]);
-        }
+        // } else {
+        //     echo json_encode(['message' => "Token không hợp lệ"]);
+        // }
     }
 
     public function getQuestionsCategory($id)

@@ -100,16 +100,20 @@ class Chat implements MessageComponentInterface
     }
     public static function RunServerSocket()
     {
-        $server = IoServer::factory(
-            new HttpServer(
-                new WsServer(
-                    new Chat()
-                )
-            ),
-            9001 // cổng server
-        );
-        // echo ("nam");
-        $server->run();
+        try {
+            $server = IoServer::factory(
+                new HttpServer(
+                    new WsServer(
+                        new Chat()
+                    )
+                ),
+                9001 // cổng server
+            );
+            $server->run();
+        } catch (Throwable $e) {
+            echo ("Error !" . $e);
+        }
+        echo ("Connect Successful");
     }
     private static function isPortInUse($port)
     {

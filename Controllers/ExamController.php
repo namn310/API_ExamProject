@@ -23,8 +23,8 @@ class ExamsController
     }
     public function create()
     {
-        $checkToken = CheckToken::checkToken();
-        if ($checkToken === true) {
+        // $checkToken = CheckToken::checkToken();
+        // if ($checkToken === true) {
             $data = json_decode(file_get_contents("php://input"), true);
             // kiểm tra dữ liệu tránh truyền script vào input
             foreach ($data as $key => $value) {
@@ -36,14 +36,14 @@ class ExamsController
             } else {
                 echo json_encode(['message' => "Tạo mới bài thi thành công !"]);
             }
-        } else {
-            echo json_encode(['message' => "Token không hợp lệ"]);
-        }
+        // } else {
+        //     echo json_encode(['message' => "Token không hợp lệ"]);
+        // }
     }
     public function update($id)
     {
-        $checkToken = CheckToken::checkToken();
-        if ($checkToken === true) {
+        // $checkToken = CheckToken::checkToken();
+        // if ($checkToken === true) {
             $data = json_decode(file_get_contents("php://input"), true);
             // kiểm tra dữ liệu tránh truyền script vào input
             foreach ($data as $key => $value) {
@@ -58,15 +58,15 @@ class ExamsController
                     echo json_encode(['message' => 'Cập nhật thông tin bài thi thành công !']);
                 }
             }
-        } else {
-            echo json_encode(['message' => "Token không hợp lệ"]);
-        }
+        // } else {
+        //     echo json_encode(['message' => "Token không hợp lệ"]);
+        // }
     }
 
     public function delete($id)
     {
-        $checkToken = CheckToken::checkToken();
-        if ($checkToken === true) {
+        // $checkToken = CheckToken::checkToken();
+        // if ($checkToken === true) {
             if ($id == 0) {
                 echo json_encode(['message' => 'Dữ liệu bài thi không tồn tại !']);
             } else {
@@ -76,9 +76,9 @@ class ExamsController
                     echo json_encode(['message' => 'Xóa bài thi thành công !']);
                 }
             }
-        } else {
-            echo json_encode(['message' => "Token không hợp lệ"]);
-        }
+        // } else {
+        //     echo json_encode(['message' => "Token không hợp lệ"]);
+        // }
     }
 
     public function getQuestionsExam($id)

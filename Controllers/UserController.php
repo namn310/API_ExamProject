@@ -31,15 +31,15 @@ class UserController
     {
         $data = json_decode(file_get_contents("php://input"), true);
         // kiểm tra dữ liệu tránh truyền script vào input
-        foreach ($data as $key => $value) {
-            $data[$key] = htmlspecialchars($value, ENT_QUOTES, 'UTF-8');
-        }
+        // foreach ($data as $key => $value) {
+        //     $data[$key] = htmlspecialchars($value, ENT_QUOTES, 'UTF-8');
+        // }
         $this->UserModel->createUser($data);
     }
     public function update($id)
     {
-        $checkToken = CheckToken::checkToken();
-        if ($checkToken === true) {
+        // $checkToken = CheckToken::checkToken();
+        // if ($checkToken === true) {
             $data = json_decode(file_get_contents("php://input"), true);
             // kiểm tra dữ liệu tránh truyền script vào input
             // foreach ($data as $key => $value) {
@@ -54,28 +54,28 @@ class UserController
                     echo json_encode(['message' => 'Cập nhật thông tin người dùng thành công !']);
                 }
             }
-        } else {
-            echo json_encode(['message' => "Token không hợp lệ"]);
-        }
+        // } else {
+        //     echo json_encode(['message' => "Token không hợp lệ"]);
+        // }
     }
     public function updatePassAdmin($id)
     {
-        $checkToken = CheckToken::checkToken();
-        if ($checkToken === true) {
+        // $checkToken = CheckToken::checkToken();
+        // if ($checkToken === true) {
             $data = json_decode(file_get_contents("php://input"), true);
             if ($id == 0) {
                 echo json_encode('Dữ liệu người dùng không tồn tại !');
             } else {
                 $this->UserModel->updatePassAdmin($data, $id);
             }
-        } else {
-            echo json_encode(['message' => "Token không hợp lệ"]);
-        }
+        // } else {
+        //     echo json_encode(['message' => "Token không hợp lệ"]);
+        // }
     }
     public function delete($id)
     {
-        $checkToken = CheckToken::checkToken();
-        if ($checkToken === true) {
+        // $checkToken = CheckToken::checkToken();
+        // if ($checkToken === true) {
             if ($id == 0) {
                 echo json_encode(['message' => 'Dữ liệu người dùng không tồn tại !']);
             } else {
@@ -85,9 +85,9 @@ class UserController
                     echo json_encode(['message' => 'Xóa thông tin người dùng thành công !']);
                 }
             }
-        } else {
-            echo json_encode(['message' => "Token không hợp lệ"]);
-        }
+        // } else {
+        //     echo json_encode(['message' => "Token không hợp lệ"]);
+        // }
     }
     public function Login()
     {
@@ -96,17 +96,17 @@ class UserController
     }
     public function resetPassword()
     {
-        $checkToken = CheckToken::checkToken();
-        if ($checkToken === true) {
+        // $checkToken = CheckToken::checkToken();
+        // if ($checkToken === true) {
             $data = json_decode(file_get_contents("php://input"), true);
             // kiểm tra dữ liệu tránh truyền script vào input
             // foreach ($data as $key => $value) {
             //     $data[$key] = htmlspecialchars($value, ENT_QUOTES, 'UTF-8');
             // }
             $this->UserModel->resetPasswordModel($data);
-        } else {
-            echo json_encode(['message' => "Token không hợp lệ"]);
-        }
+        // } else {
+        //     echo json_encode(['message' => "Token không hợp lệ"]);
+        // }
     }
     public function forgotPassword()
     {

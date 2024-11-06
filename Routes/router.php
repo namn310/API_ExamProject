@@ -1,13 +1,4 @@
 <?php
-
-header("Access-Control-Allow-Origin: *");
-header("Access-Control-Allow-Methods: GET, POST, DELETE, OPTIONS,PUT,PATCH");
-header("Access-Control-Allow-Headers: Content-Type, Authorization");
-header("Content-Type: application/json");
-header("Content-Type: multipart/form-data");
-header('Access-Control-Allow-Headers: Access-Control-Allow-Headers,Content-Type,Access-Control-Allow-Methods, Authorization, X-Requested-With');
-
-
 include_once  __DIR__ . '/../Controllers/QuestionController.php';
 include_once  __DIR__ . '/../Controllers/ExamController.php';
 include_once  __DIR__ . '/../Controllers/UserController.php';
@@ -128,6 +119,24 @@ $routers = [
         '/updateIsReadChat/(\d+)' => function ($id) use ($ChatController) {
             $ChatController->updateStatusIsReadChatUserController($id);
         },
+        // '/assets/image/AnswerQuestion/(.+)' => function ($fileName) {
+        //     $filePath = __DIR__ . '/../assets/image/AnswerQuestion/' . basename($fileName);
+
+        //     if (file_exists($filePath)) {
+        //         // Set the appropriate content type for the file
+        //         $mimeType = mime_content_type($filePath);
+        //         header('Content-Type: ' . $mimeType);
+        //         header('Content-Length: ' . filesize($filePath));
+
+        //         // Serve the file
+        //         readfile($filePath);
+        //         echo json_encode('correct');
+        //     } else {
+        //         // File not found
+        //         // header("HTTP/1.0 404 Not Found");
+        //         echo json_encode("error");
+        //     }
+        // }
     ],
 
     'DELETE' => [
