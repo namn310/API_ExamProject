@@ -6,6 +6,7 @@ include_once  __DIR__ . '/../Controllers/CategoryExamController.php';
 include_once  __DIR__ . '/../Controllers/ResultController.php';
 include_once  __DIR__ . '/../Controllers/CommentController.php';
 include_once  __DIR__ . '/../Controllers/ChatController.php';
+include_once  __DIR__ . '/../Controllers/DataRGui.php';
 include_once  __DIR__ . '/../Connection/Connection.php';
 include_once  __DIR__ . '/../Connection/CheckToken.php';
 include_once  __DIR__ . '/../Routes/handleRouter.php';
@@ -17,7 +18,7 @@ $Category_exam = new CategoryExamController();
 $ResultController = new ResultController();
 $CommentController = new CommentController();
 $ChatController = new ChatController();
-
+$dataGui = new DataRGui();
 $methodRequest = $_SERVER['REQUEST_METHOD'];
 $UriRequest = $_SERVER['REQUEST_URI'];
 // lấy URI chính
@@ -27,6 +28,10 @@ $UriRequest = strtok($UriRequest, '?');
 $routers = [
     // lấy danh sách câu hỏi
     'GET' => [
+        '/getDataRGui' => function () use ($dataGui) {
+            $dataGui->getData();
+        },
+
         // lấy danh sách câu hỏi
         '/questions' => function () use ($QuestionsController) {
             $QuestionsController->index();
@@ -178,6 +183,10 @@ $routers = [
     ],
     // Tạo mới thông tin
     'POST' => [
+        // test dữ liệu R Gui
+        '/DataRGui' => function () use ($dataGui) {
+            $dataGui->sendData();
+        },
         // tạo mới câu hỏi          
         '/questions/create' => function () use ($QuestionsController) {
             $QuestionsController->create();
@@ -201,6 +210,10 @@ $routers = [
         // tạo mới tài khoản
         '/users/create' => function () use ($UserController) {
             $UserController->create();
+        },
+        //login Google
+        '/users/loginGoogle' => function () use ($UserController) {
+            $UserController->LoginGoogle();
         },
         // kiểm tra login
         '/users/login' => function () use ($UserController) {

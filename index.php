@@ -17,4 +17,5 @@ header("Content-Type: application/json");
 // header('Access-Control-Allow-Credentials: true');
 // header("Content-Type: multipart/form-data");
 // header("Content-Type: image/png"); // Adjust as needed for other image types
+
 include_once __DIR__ . '../Routes/router.php';

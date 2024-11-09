@@ -113,7 +113,8 @@ class UserModel extends BaseModel
                             'id' => $user['id'],
                             'email' => $user['email'],
                             'name' => $user['name'],
-                            'role' => $user['role']
+                            'role' => $user['role'],
+                            'type_account' => 'account'
                         ]
                     ];
                     $jwt = JWT::encode($payload, $key, 'HS256');
@@ -130,7 +131,8 @@ class UserModel extends BaseModel
                             'id' => $user['id'],
                             'email' => $user['email'],
                             'name' => $user['name'],
-                            'role' => $user['role']
+                            'role' => $user['role'],
+                            'type_account' => 'account'
                         ]
                     ];
                     $jwt = JWT::encode($payload, $key, 'HS256');
@@ -144,6 +146,104 @@ class UserModel extends BaseModel
             }
         } catch (Throwable $e) {
             echo json_encode(['message' => "Có lỗi xảy ra " . $e]);
+        }
+    }
+    public function loginGoogleModel($data)
+    {
+        $key = getenv('KEY');
+        $token = $data['token'] ?? '';
+        $role = $data['role'] ?? '';
+        // echo json_encode($token);
+        $googleClientId = getenv('GOOGLE_CLIENT_ID');
+        $googleClientSecret = getenv('GOOGLE_CLIENT_SECRET');
+        $googleClientUri = getenv('GOOGLE_REDIRECT_URI');
+        $client = new Google_Client();
+        $client->setClientId($googleClientId);
+        try {
+            $payload = $client->verifyIdToken($token);
+            if ($payload) {
+                $userId = $payload['sub'];  // Google user ID
+                $userEmail = $payload['email'];
+                $userName = $payload['name'];
+                // kiểm tra xem tài khoản đã tồn tại trong hệ thống chưa
+                $conn = ConnectionDB::GetConnect();
+                $query1 = $conn->prepare("select id,name,email,type_account,id_account_social,role from users where (type_account=:type_account and role=:role) and (id_account_social=:id and email=:email) ");
+                $query1->execute([
+                    'type_account' => 'google',
+                    'id' => $userId,
+                    'email' => $userEmail,
+                    'role' => $role
+                ]);
+                if ($query1->rowCount() > 0) {
+                    $result = $query1->fetch(PDO::FETCH_ASSOC);
+                    $id = $result['id'];
+                    $role = $result['role'];
+                }
+                // nếu chưa có thì tạo mới vào bảng users
+                else {
+                    $query2 = $conn->prepare("insert into users (name,password,email,role,type_account,id_account_social) values (:name,:password,:email,:role,:type_account,:id_account_social)");
+                    $hashPassword = hash("sha256", `$userEmail` . `$userName`);
+                    $query2->execute([
+                        'name' => $userName,
+                        'password' => $hashPassword,
+                        'email' => $userEmail,
+                        'role' => $role,
+                        'type_account' => 'google',
+                        'id_account_social' => $userId,
+                    ]);
+                    $id = $conn->lastInsertId();
+                }
+                // tạo token đăng nhập
+                $timeCreate = time();
+                $timeExpire = time() + 86400;
+                if ($role == 'student') {
+                    $payload = [
+                        'iat' => $timeCreate,
+                        'exp' => $timeExpire,
+                        'data' => [
+                            'id' => $id,
+                            'email' => $userEmail,
+                            'name' => $userName,
+                            'role' => $role,
+                            'type_account' => 'google'
+                        ]
+                    ];
+                    $jwt = JWT::encode($payload, $key, 'HS256');
+                    echo json_encode([
+                        'message' => 'Đăng nhập thành công !',
+                        'jwtStudent' => $jwt,
+                    ]);
+                }
+                if ($role == 'admin') {
+                    $payload = [
+                        'iat' => $timeCreate,
+                        'exp' => $timeExpire,
+                        'data' => [
+                            'id' => $id,
+                            'email' => $userEmail,
+                            'name' => $userName,
+                            'role' => $role,
+                            'type_account' => 'google'
+                        ]
+                    ];
+                    $jwt = JWT::encode($payload, $key, 'HS256');
+                    echo json_encode([
+                        'message' => 'Đăng nhập thành công !',
+                        'jwtAdmin' => $jwt,
+                    ]);
+                }
+                // echo json_encode([
+                //     'success' => true,
+                //     'message' => 'Authentication successful',
+                //     'user_id' => $userId,
+                //     'user_email' => $userEmail,
+                //     'user_name' => $userName
+                // ]);
+            } else {
+                echo json_encode(['success' => false, 'message' => 'Invalid token']);
+            }
+        } catch (Exception $e) {
+            echo json_encode(['success' => false, 'message' => 'Error verifying token: ' . $e->getMessage()]);
         }
     }
     public function resetPasswordModel($data)
