@@ -40,7 +40,7 @@ class ConnectionDB
             $conn->setAttribute(PDO::ATTR_DEFAULT_FETCH_MODE, PDO::FETCH_OBJ);
             $conn->exec("set names utf8");
         } catch (Throwable $e) {
-            echo json_encode("Error in connect database");  
+            echo json_encode("Error in connect database".$e);  
         }
         return $conn;
     }

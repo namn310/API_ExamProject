@@ -25,17 +25,17 @@ class ExamsController
     {
         // $checkToken = CheckToken::checkToken();
         // if ($checkToken === true) {
-            $data = json_decode(file_get_contents("php://input"), true);
-            // kiểm tra dữ liệu tránh truyền script vào input
-            foreach ($data as $key => $value) {
-                $data[$key] = htmlspecialchars($value, ENT_QUOTES, 'UTF-8');
-            }
-            // $this->ExamModel->createExam($data);
-            if ($this->ExamModel->createExam($data) == false) {
-                echo json_encode(['message' => "Có lỗi xảy ra !"]);
-            } else {
-                echo json_encode(['message' => "Tạo mới bài thi thành công !"]);
-            }
+        $data = json_decode(file_get_contents("php://input"), true);
+        // kiểm tra dữ liệu tránh truyền script vào input
+        foreach ($data as $key => $value) {
+            $data[$key] = htmlspecialchars($value, ENT_QUOTES, 'UTF-8');
+        }
+        // $this->ExamModel->createExam($data);
+        if ($this->ExamModel->createExam($data) == false) {
+            echo json_encode(['message' => "Có lỗi xảy ra !"]);
+        } else {
+            echo json_encode(['message' => "Tạo mới bài thi thành công !"]);
+        }
         // } else {
         //     echo json_encode(['message' => "Token không hợp lệ"]);
         // }
@@ -44,20 +44,20 @@ class ExamsController
     {
         // $checkToken = CheckToken::checkToken();
         // if ($checkToken === true) {
-            $data = json_decode(file_get_contents("php://input"), true);
-            // kiểm tra dữ liệu tránh truyền script vào input
-            foreach ($data as $key => $value) {
-                $data[$key] = htmlspecialchars($value, ENT_QUOTES, 'UTF-8');
-            }
-            if ($id == 0) {
-                echo json_encode(['message' => 'Dữ liệu bài thi không tồn tại !']);
+        $data = json_decode(file_get_contents("php://input"), true);
+        // kiểm tra dữ liệu tránh truyền script vào input
+        foreach ($data as $key => $value) {
+            $data[$key] = htmlspecialchars($value, ENT_QUOTES, 'UTF-8');
+        }
+        if ($id == 0) {
+            echo json_encode(['message' => 'Dữ liệu bài thi không tồn tại !']);
+        } else {
+            if ($this->ExamModel->update($data, $id) == false) {
+                echo json_encode(['message' => 'Cập nhật bài thi không thành công !']);
             } else {
-                if ($this->ExamModel->update($data, $id) == false) {
-                    echo json_encode(['message' => 'Cập nhật bài thi không thành công !']);
-                } else {
-                    echo json_encode(['message' => 'Cập nhật thông tin bài thi thành công !']);
-                }
+                echo json_encode(['message' => 'Cập nhật thông tin bài thi thành công !']);
             }
+        }
         // } else {
         //     echo json_encode(['message' => "Token không hợp lệ"]);
         // }
@@ -67,15 +67,15 @@ class ExamsController
     {
         // $checkToken = CheckToken::checkToken();
         // if ($checkToken === true) {
-            if ($id == 0) {
-                echo json_encode(['message' => 'Dữ liệu bài thi không tồn tại !']);
+        if ($id == 0) {
+            echo json_encode(['message' => 'Dữ liệu bài thi không tồn tại !']);
+        } else {
+            if ($this->ExamModel->delete($id) == false) {
+                echo json_encode(['message' => 'Có lỗi xảy ra !']);
             } else {
-                if ($this->ExamModel->delete($id) == false) {
-                    echo json_encode(['message' => 'Có lỗi xảy ra !']);
-                } else {
-                    echo json_encode(['message' => 'Xóa bài thi thành công !']);
-                }
+                echo json_encode(['message' => 'Xóa bài thi thành công !']);
             }
+        }
         // } else {
         //     echo json_encode(['message' => "Token không hợp lệ"]);
         // }
@@ -86,7 +86,11 @@ class ExamsController
         $result = $this->ExamModel->readQuestionExam($id);
         echo json_encode(['data' => $result]);
     }
-
+    public function getQuestionNoResultController($id)
+    {
+        $result = $this->ExamModel->getQuestionNoResult($id);
+        echo json_encode(['data' => $result]);
+    }
     public function getCategoryExam($id)
     {
         $result = $this->ExamModel->readCategoryExam($id);

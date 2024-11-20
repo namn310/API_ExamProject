@@ -60,6 +60,10 @@ $routers = [
         '/exams/questions-exams/(\d+)' => function ($id) use ($ExamsController) {
             $ExamsController->getQuestionsExam($id);
         },
+        // lấy dữ liệu câu hỏi để làm bài thi. Dữ liệu này không gửi đáp án
+        '/exams/questions-todo-exams/(\d+)' => function ($id) use ($ExamsController) {
+            $ExamsController->getQuestionNoResultController($id);
+        },
         // lấy số lượng người làm sai câu hỏi
         '/exams/count_do_wrong/(\d+)' => function ($id) use ($ExamsController) {
             $ExamsController->getNumberDoWrong($id);

@@ -61,13 +61,14 @@ class ResultModel extends BaseModel
     {
         $conn = ConnectionDB::GetConnect();
         try {
-            $query = $conn->prepare("select id_question,answer from $this->tableResultDetail where id_results=:id_results order by id_question");
+            $query = $conn->prepare("select id_question,answer,state from $this->tableResultDetail where id_results=:id_results order by id_question");
             $query->execute(['id_results' => $id]);
         } catch (Throwable $e) {
             echo json_encode(['message' => "Có lối xảy ra "]);
         }
         echo json_encode(['data' => $query->fetchAll()]);
     }
+
     public function createResultExam($data)
     {
         $conn = ConnectionDB::GetConnect();
@@ -78,9 +79,96 @@ class ResultModel extends BaseModel
         // $array = [];
         // echo json_encode($data['id_exam']);
         try {
+            // // tổng số câu hỏi trong bài kiếm tra
+            $totalQuestionInExam = array_pop($data);
+            // // lấy danh sách câu trả lời của thí sinh
             $answer = array_pop($data);
-            $listQuestionIncorrect = array_pop($data);
+            $blankAnswerQuestion = $data['blank_question'];
+            // số câu hỏi làm đúng
+            $correct_question = 0;
+            // số điểm của mỗi câu hỏi
+            $scorePerQuestion = 10 / $totalQuestionInExam;
+            $listQuestionInExam = array_pop($data);
             $idExam = $data['id_exam'];
+            $listCorrectAnswer = [];
+            // duyệt mảng answer để lấy id các câu hỏi
+            foreach ($listQuestionInExam as $row) {
+                $id_ques = $row['id'];
+                // lấy ra đáp án của các câu hỏi
+                $queryGetCorrectAns = $conn->prepare("select id,correctAns from questions where id=:id");
+                $queryGetCorrectAns->execute(['id' => $id_ques]);
+                $itemCorrectAns = $queryGetCorrectAns->fetch(PDO::FETCH_ASSOC)['correctAns'];
+                // loại bỏ các ký tự JSON
+                $itemCorrectAns = trim($itemCorrectAns, "[]\"\n ");
+                $itemCorrectAns = explode(',', $itemCorrectAns);
+                $itemCorrectAns = array_map(function ($item) {
+                    return trim($item, ' "'); // Loại bỏ cả dấu " và khoảng trắng đầu/cuối
+                }, $itemCorrectAns);
+                // tạo đối tượng
+                $listItem = new stdClass();
+                $listItem->id = $id_ques;
+                $listItem->answer = $itemCorrectAns;
+                // thêm phần tử listItem vào mảng đáp án
+                $listCorrectAnswer[] = $listItem;
+            }
+            //  so sánh hai mảng answer và  $listCorrectAnswer để tính điểm
+
+            // số câu trả lời đúng
+            // duyệt mảng answer và thêm câu trả lời vào listQuestionExam để thực hiện so sánh đáp án
+            foreach ($listQuestionInExam as $key => $row1) {
+                $listQuestionInExam[$key]['answer'] = null;
+                foreach ($answer as $row2) {
+                    if ($row2['id'] === $row1['id']) {
+                        $listQuestionInExam[$key]['answer'] = $row2['answer'];
+                        break;
+                    }
+                }
+            }
+            // tạo mảng danh sách check đáp án
+            // $listCheckAnswer = [];
+            // duyệt mảng danh sách câu trả lời đùng
+            foreach ($listCorrectAnswer as $row1) {
+                $id = $row1->id;
+                // $item = new stdClass();
+                // $item->id = $id;
+                // $item->status = 0;
+                // duyệt mảng câu trả lời của người dùng
+                foreach ($listQuestionInExam as $key => $row2) {
+                    $row2Id =  $row2['id'];
+                    $row2Answer = $row2['answer'];
+                    // tìm đến phần tử có id giống với id trong danh sách câu trả lời đùng
+                    if ($id == $row2Id) {
+                        // dùng array_diff để so sánh 2 mảng đáp áp
+                        //  array_diff sẽ trả về phần tử chỉ xuất hiện ở mảng đầu mà không xuất hiện ở các mảng khác
+                        if (!empty($row2Answer)) {
+                            if (!(array_diff($row2Answer, $row1->answer)) && !(array_diff($row1->answer, $row2Answer))) {
+                                // thực hiện so sánh thì đáp án
+                                // gắn cờ bằng 1 nghĩa là câu này đúng
+                                $listQuestionInExam[$key]['state'] = 1;
+                                $correct_question += 1;
+                                break;
+                            }
+                        } else {
+                        }
+                    }
+                }
+                // $listCheckAnswer[] = $item;
+            }
+            // số câu hỏi làm sai
+            $incorrect_question = $totalQuestionInExam - $correct_question - $blankAnswerQuestion;
+            // thêm dữ liệu vào mảng data
+            $data['incorrect_question'] = $incorrect_question;
+            $data['score'] = $scorePerQuestion * $correct_question;
+            $data['correct_question'] = $correct_question;
+            // echo json_encode([
+            //     $answer,
+            //     $listCorrectAnswer,
+            //     $listQuestionInExam,
+            //     $correct_question,
+            //     $incorrect_question,
+            //     $data['score'],
+            //     $scorePerQuestion
+            // ]);
             $columns = implode(",", array_keys($data));
             // prepare giá trị truyền vào sql
             // lấy giá trị từ data
@@ -98,19 +186,19 @@ class ResultModel extends BaseModel
             $query6 = $conn->prepare("update exams set count_user_do=:number where id=:id");
             $query6->execute(['number' => $count_user_do + 1, 'id' => $idExam]);
             // thêm dữ liệu vào bảng result_question
-            $query3 = $conn->prepare("insert into result_detail set id_results=:id_results,id_question=:id_question,answer=:answer");
+            $query3 = $conn->prepare("insert into result_detail set id_results=:id_results,id_question=:id_question,answer=:answer,state=:state");
             if ($answer !== null) {
-                foreach ($answer as $row2) {
+                foreach ($listQuestionInExam as $row2) {
                     // duyệt mảng answer lấy id trong answer trùng với id trong query2 thì lấy câu trả lời 
                     // if ($row2['id'] == $row->id_ques) {
                     $answerSelected = $row2['answer'] !== null ? $row2['answer'] : null;
                     // }
                     // }
-                    $query3->execute(['id_results' => $lastRecord, 'id_question' => $row2['id'], 'answer' => $answerSelected]);
+                    $query3->execute(['id_results' => $lastRecord, 'id_question' => $row2['id'], 'answer' => json_encode($answerSelected),'state'=>$row2['state']]);
                     // set trạng thái câu hỏi người làm đúng hay sai
                 }
             }
-            foreach ($listQuestionIncorrect as $row3) {
+            foreach ($listQuestionInExam as $row3) {
                 $idQuestion = $row3['id'];
                 $query5 = $conn->prepare("select id_question from result_detail where id_question =:id");
                 $query5->execute(['id' => $idQuestion]);

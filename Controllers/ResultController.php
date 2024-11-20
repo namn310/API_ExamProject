@@ -37,9 +37,9 @@ class ResultController
         // if ($checkToken === true) {
             $data = json_decode(file_get_contents("php://input"), true);
             // kiểm tra dữ liệu tránh truyền script vào input
-            foreach ($data as $key => $value) {
-                $data[$key] = htmlspecialchars($value, ENT_QUOTES, 'UTF-8');
-            }
+            // foreach ($data as $key => $value) {
+            //     $data[$key] = htmlspecialchars($value, ENT_QUOTES, 'UTF-8');
+            // }
             $this->ResultModel->createResultExam($data);
         // } else {
         //     echo json_encode(['message' => "Token không hợp lệ"]);
