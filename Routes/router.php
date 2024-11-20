@@ -31,7 +31,6 @@ $routers = [
         '/getDataRGui' => function () use ($dataGui) {
             $dataGui->getData();
         },
-
         // lấy danh sách câu hỏi
         '/questions' => function () use ($QuestionsController) {
             $QuestionsController->index();

@@ -4,6 +4,7 @@ class DataRGui
     public function getData()
     {
         // $data = json_decode(file_get_contents("php://input"), true);
+        // dữ liệu test
         $data1 =
             [
                 [
@@ -119,8 +120,11 @@ class DataRGui
             ];
         echo json_encode($data1);
     }
+    // gửi dữ liệu đúng sai câu hỏi theo thí sinh để tính IRT 
+    // gửi dữ liệu đến API bên R
     public function sendData()
     {
+        // gửi dữ liệu đi
         $data = json_decode(file_get_contents("php://input"), true);
         $data1 =
             [
