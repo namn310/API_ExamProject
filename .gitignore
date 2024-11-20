@@ -1,4 +1,5 @@
 .env
+.htaccess
 # Ignore Docker files
 Dockerfile
 .dockerignore
