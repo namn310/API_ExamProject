@@ -7,6 +7,7 @@ include_once  __DIR__ . '/../Controllers/ResultController.php';
 include_once  __DIR__ . '/../Controllers/CommentController.php';
 include_once  __DIR__ . '/../Controllers/ChatController.php';
 include_once  __DIR__ . '/../Controllers/DataRGui.php';
+include_once  __DIR__ . '/../Controllers/IRTController.php';
 include_once  __DIR__ . '/../Connection/Connection.php';
 include_once  __DIR__ . '/../Connection/CheckToken.php';
 include_once  __DIR__ . '/../Routes/handleRouter.php';
@@ -19,6 +20,7 @@ $ResultController = new ResultController();
 $CommentController = new CommentController();
 $ChatController = new ChatController();
 $dataGui = new DataRGui();
+$IRTController = new IRTController();
 $methodRequest = $_SERVER['REQUEST_METHOD'];
 $UriRequest = $_SERVER['REQUEST_URI'];
 // lấy URI chính
@@ -28,9 +30,6 @@ $UriRequest = strtok($UriRequest, '?');
 $routers = [
     // lấy danh sách câu hỏi
     'GET' => [
-        '/getDataRGui' => function () use ($dataGui) {
-            $dataGui->getData();
-        },
         // lấy danh sách câu hỏi
         '/questions' => function () use ($QuestionsController) {
             $QuestionsController->index();
@@ -127,24 +126,24 @@ $routers = [
         '/updateIsReadChat/(\d+)' => function ($id) use ($ChatController) {
             $ChatController->updateStatusIsReadChatUserController($id);
         },
-        // '/assets/image/AnswerQuestion/(.+)' => function ($fileName) {
-        //     $filePath = __DIR__ . '/../assets/image/AnswerQuestion/' . basename($fileName);
 
-        //     if (file_exists($filePath)) {
-        //         // Set the appropriate content type for the file
-        //         $mimeType = mime_content_type($filePath);
-        //         header('Content-Type: ' . $mimeType);
-        //         header('Content-Length: ' . filesize($filePath));
-
-        //         // Serve the file
-        //         readfile($filePath);
-        //         echo json_encode('correct');
-        //     } else {
-        //         // File not found
-        //         // header("HTTP/1.0 404 Not Found");
-        //         echo json_encode("error");
-        //     }
-        // }
+        // IRT Url
+        // lấy dữ liệu tính IRT
+        '/getDataRGui' => function () use ($dataGui) {
+            $dataGui->getData();
+        },
+        // lấy danh sách thí sinh làm bài thi 
+        '/IRT-get-user-do-exam/(\d+)' => function ($id) use ($IRTController) {
+            $IRTController->getDataStudentDoExamController($id);
+        },
+        // lấy dữ liệu kết quả bài làm theo học sinh
+        '/IRT-get-result-by-user/userId=(\d+)&examId=(\d+)&resultId=(\d+)' => function ($idUser, $idExam, $idResult) use ($IRTController) {
+            $IRTController->getDataResultByStudent($idUser, $idExam, $idResult);
+        },
+        // lấy dữ liệu kết quả bài làm theo học sinh
+        '/IRT-make-Data/ExamId=(\d+)' => function ($idExam) use ($IRTController) {
+            $IRTController->sendDataResultQuestionToCalculateIrtController($idExam);
+        },
     ],
 
     'DELETE' => [

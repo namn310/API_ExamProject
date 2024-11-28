@@ -13,42 +13,45 @@ class UserModel extends BaseModel
 
     protected $table;
     protected $UserModel;
+    protected $conn;
     public function __construct()
     {
+        $this->conn = ConnectionDB::GetConnect();
         $this->table = 'users';
         $this->UserModel = new BaseModel($this->table);
     }
     public function index()
     {
-        $conn = ConnectionDB::GetConnect();
-        $query = $conn->query("select id,name,email,create_at from $this->table");
+
+        $query = $this->conn->query("select id,name,email,create_at from $this->table");
         return $query->fetchAll();
     }
     public function createUser($data)
     {
-        $conn = ConnectionDB::GetConnect();
         $name = $data['name'];
         $email = $data['email'];
         $pass = md5($data['password']);
         $role = $data['role'];
         try {
-            $query = $conn->prepare("select id from $this->table where email=:email");
+            $this->conn->beginTransaction();
+            $query = $this->conn->prepare("select id from $this->table where email=:email");
             $query->execute(['email' => $email]);
             if ($query->rowCount() > 0) {
                 echo json_encode(['message' => 'Email đã tồn tại']);
             } else {
-                $query2 = $conn->prepare("insert into $this->table (name,password,email,role) values (:name,:pass,:email,:role)");
+                $query2 = $this->conn->prepare("insert into $this->table (name,password,email,role) values (:name,:pass,:email,:role)");
                 $query2->execute(['name' => $name, 'pass' => $pass, 'email' => $email, 'role' => $role]);
                 echo json_encode(['message' => 'Đăng ký tài khoản thành công']);
             }
+            $this->conn->commit();
         } catch (Throwable $e) {
+            $this->conn->rollBack();
             echo json_encode(['message' => $e]);
         }
     }
     public function read($id)
     {
-        $conn = ConnectionDB::GetConnect();
-        $query = $conn->prepare("select id,name,email,role,create_at from $this->table where id=:id");
+        $query = $this->conn->prepare("select id,name,email,role,create_at from $this->table where id=:id");
         $query->execute(['id' => $id]);
         return $query->fetch();
     }
@@ -64,14 +67,17 @@ class UserModel extends BaseModel
     {
         $oldpass = json_decode($data['oldpass']);
         $newpass = json_decode($data['newpass']);
-        $conn = ConnectionDB::GetConnect();
-        $query = $conn->prepare("select id from users where id=:id and password=:password limit 1");
+
+        $query = $this->conn->prepare("select id from users where id=:id and password=:password limit 1");
         $query->execute(['id' => $id, 'password' => $oldpass]);
         if ($query->rowCount() > 0) {
             try {
-                $query2 = $conn->prepare("update users set password=:password where id=:id");
+                $this->conn->beginTransaction();
+                $query2 = $this->conn->prepare("update users set password=:password where id=:id");
                 $query2->execute(['password' => $newpass, 'id' => $id]);
+                $this->conn->commit();
             } catch (Throwable $e) {
+                $this->conn->rollBack();
                 echo json_encode($e);
             }
             echo json_encode('Cập nhật mật khẩu thành công');
@@ -81,9 +87,9 @@ class UserModel extends BaseModel
     }
     public function getUserCreate()
     {
-        $conn = ConnectionDB::GetConnect();
+
         try {
-            $query = $conn->prepare("select name,id from users where role=:role");
+            $query = $this->conn->prepare("select name,id from users where role=:role");
             $query->execute(['role' => 'admin']);
         } catch (Throwable $e) {
             echo json_encode(['message' => "Lỗi" . $e]);
@@ -94,12 +100,12 @@ class UserModel extends BaseModel
     {
         $key = getenv('KEY');
         // $data = json_decode(file_get_contents("php://input"), true);
-        $conn = ConnectionDB::GetConnect();
+
         try {
             $email = $data['email'];
             $pass = md5($data['password']);
             $role = $data['role'];
-            $query = $conn->prepare("select * from $this->table where email=:email and password=:password and role=:role LIMIT 1");
+            $query = $this->conn->prepare("select * from $this->table where email=:email and password=:password and role=:role LIMIT 1");
             $query->execute(['email' => $email, 'password' => $pass, 'role' => $role]);
             $user = $query->fetch(PDO::FETCH_ASSOC);
             if ($query->rowCount() > 0) {
@@ -166,8 +172,8 @@ class UserModel extends BaseModel
                 $userEmail = $payload['email'];
                 $userName = $payload['name'];
                 // kiểm tra xem tài khoản đã tồn tại trong hệ thống chưa
-                $conn = ConnectionDB::GetConnect();
-                $query1 = $conn->prepare("select id,name,email,type_account,id_account_social,role from users where (type_account=:type_account and role=:role) and (id_account_social=:id and email=:email) ");
+
+                $query1 = $this->conn->prepare("select id,name,email,type_account,id_account_social,role from users where (type_account=:type_account and role=:role) and (id_account_social=:id and email=:email) ");
                 $query1->execute([
                     'type_account' => 'google',
                     'id' => $userId,
@@ -181,7 +187,8 @@ class UserModel extends BaseModel
                 }
                 // nếu chưa có thì tạo mới vào bảng users
                 else {
-                    $query2 = $conn->prepare("insert into users (name,password,email,role,type_account,id_account_social) values (:name,:password,:email,:role,:type_account,:id_account_social)");
+                    $this->conn->beginTransaction();
+                    $query2 = $this->conn->prepare("insert into users (name,password,email,role,type_account,id_account_social) values (:name,:password,:email,:role,:type_account,:id_account_social)");
                     $hashPassword = hash("sha256", `$userEmail` . `$userName`);
                     $query2->execute([
                         'name' => $userName,
@@ -191,7 +198,8 @@ class UserModel extends BaseModel
                         'type_account' => 'google',
                         'id_account_social' => $userId,
                     ]);
-                    $id = $conn->lastInsertId();
+                    $this->conn->commit();
+                    $id = $this->conn->lastInsertId();
                 }
                 // tạo token đăng nhập
                 $timeCreate = time();
@@ -243,46 +251,50 @@ class UserModel extends BaseModel
                 echo json_encode(['success' => false, 'message' => 'Invalid token']);
             }
         } catch (Exception $e) {
+            $this->conn->rollBack();
             echo json_encode(['success' => false, 'message' => 'Error verifying token: ' . $e->getMessage()]);
         }
     }
     public function resetPasswordModel($data)
     {
         $key = getenv('KEY');
-        $conn = ConnectionDB::GetConnect();
+
         $token = $data['token'];
         $newPassword = md5($data['new_password']);
         $oldPasswordInput = md5($data['old_password']);
         try {
+            $this->conn->beginTransaction();
             $decoded = JWT::decode($token, new Key($key, 'HS256'));
             // echo json_encode($decoded->data->id);
             $userId = $decoded->data->id;
             $userEmail = $decoded->data->email;
-            $query = $conn->prepare("select id,password from $this->table where id=:id and email=:email");
+            $query = $this->conn->prepare("select id,password from $this->table where id=:id and email=:email");
             $query->execute(['id' => $userId, 'email' => $userEmail]);
             if ($query->rowCount() > 0) {
                 $result = $query->fetch();
                 $oldPassword = $result->password;
                 // so sánh mật khẩu cũ nhập vào với mật khẩu trong database
                 if ($oldPassword === $oldPasswordInput) {
-                    $updated = $conn->prepare("update $this->table set password=:password where id=:id and email=:email ");
+                    $updated = $this->conn->prepare("update $this->table set password=:password where id=:id and email=:email ");
                     $updated->execute(['password' => $newPassword, 'id' => $userId, 'email' => $userEmail]);
                     echo json_encode(['message' => 'Đổi mật khẩu thành công !']);
                 } else {
                     echo json_encode(['message' => 'Mật khẩu cũ không chính xác']);
                 }
             }
+            $this->conn->commit();
         } catch (Exception $e) {
+            $this->conn->rollBack();
             echo json_encode(['message' => 'Có lỗi xảy ra !' . $e->getMessage()]);
         }
     }
     public function forgotPasswordModel($data)
     {
-        $conn = ConnectionDB::GetConnect();
+
         $key = getenv('KEY');
         // $data = json_decode($data);
         try {
-            $query = $conn->prepare("select id,email from $this->table where email=:email");
+            $query = $this->conn->prepare("select id,email from $this->table where email=:email");
             $query->execute(['email' => trim($data['email'])]);
             if ($query->rowCount() > 0) {
                 $user = $query->fetch(PDO::FETCH_ASSOC);
@@ -395,12 +407,14 @@ class UserModel extends BaseModel
 EOD;
             // echo json_encode($mail->Body);
             $mail->send();
-            $conn = ConnectionDB::GetConnect();
             $now = new DateTime();
             $CurrentDateTime = $now->format('Y-m-d H:i:s');
-            $query = $conn->prepare("insert into token_forgot_password (token,time_create,OTP) values (:token,:date,:OTP)");
+            $this->conn->beginTransaction();
+            $query = $this->conn->prepare("insert into token_forgot_password (token,time_create,OTP) values (:token,:date,:OTP)");
             $query->execute(['token' => $token, 'date' => $CurrentDateTime, 'OTP' => $OTP]);
+            $this->conn->commit();
         } catch (Exception $e) {
+            $this->conn->rollBack();
             echo json_encode(['message' => 'Không thể gửi email. Lỗi: ' . $mail->ErrorInfo]);
         }
     }
@@ -426,8 +440,8 @@ EOD;
             $decodedToken = JWT::decode($token, new Key($key, 'HS256'));
             $idUser = $decodedToken->data->id;
             $emailUser = $decodedToken->data->email;
-            $conn = ConnectionDB::GetConnect();
-            $query1 = $conn->prepare("select id,time_create,OTP from token_forgot_password where token=:token and OTP=:OTP order by id desc limit 1");
+            $this->conn->beginTransaction();
+            $query1 = $this->conn->prepare("select id,time_create,OTP from token_forgot_password where token=:token and OTP=:OTP order by id desc limit 1");
             $query1->execute(['token' => $token, 'OTP' => $OTP]);
             if ($query1->rowCount() > 0) {
                 date_default_timezone_set("Asia/Ho_Chi_Minh");
@@ -446,23 +460,25 @@ EOD;
                 //nếu lớn hơn 30p = 1800
                 if ($diffInSecond > 1800) {
                     // nếu token hết hạn thì xóa đi
-                    $query3 = $conn->prepare("delete from token_forgot_password where token=:token");
+                    $query3 = $this->conn->prepare("delete from token_forgot_password where token=:token");
                     $query3->execute(['token' => $token]);
                     echo json_encode(['message' => 'Mã OTP đã hết hiệu lực !']);
                 } elseif ($OTP != $OTP_query) {
                     echo json_encode(['message' => 'Mã OTP đã hết hiệu lực !']);
                 } else {
-                    $query2 = $conn->prepare("update $this->table set password=:password where id=:idUser and email=:email");
+                    $query2 = $this->conn->prepare("update $this->table set password=:password where id=:idUser and email=:email");
                     $query2->execute(['password' => $newpass, 'idUser' => $idUser, 'email' => $emailUser]);
                     // xóa token sau khi đổi pass 
-                    $query3 = $conn->prepare("delete from token_forgot_password where token=:token");
+                    $query3 = $this->conn->prepare("delete from token_forgot_password where token=:token");
                     $query3->execute(['token' => $token]);
                     echo json_encode(['message' => 'Đổi mật khẩu thành công !']);
                 }
             } else {
                 echo json_encode(['message' => 'Không tồn tại Token hợp lệ !']);
             }
+            $this->conn->commit();
         } catch (Throwable $e) {
+            $this->conn->rollBack();
             echo json_encode(['message' => 'Có lỗi xảy ra ' . $e]);
         }
     }

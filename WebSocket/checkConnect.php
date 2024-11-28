@@ -4,22 +4,7 @@ include_once __DIR__ . '/../Models/BaseModel.php';
 
 class checkConnectSocket
 {
-    public static function checkConnect()
-    {
-        // $conn = Connection::GetConnect();
-        // $query1 = $conn->query("select id,status from status_socket_server where id=1");
-        // if (!$query1->rowCount() > 0) {
-        //     $result = null;
-        // } else {
-        //     $status = $query1->fetch(PDO::FETCH_ASSOC);
-        //     if (empty($status)) {
-        //         // chưa tồn tại status
-        //         $result = 0;
-        //     } else {
-        //         $result = $status['status'];
-        //     }
-        // }
-        // return $result;
+    public static function checkConnect(){
         try {
             $conn = ConnectionDB::GetConnect();
             $query1 = $conn->query("SELECT status FROM status_socket_server WHERE id=1");

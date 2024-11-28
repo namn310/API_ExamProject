@@ -16,8 +16,10 @@ class Chat implements MessageComponentInterface
 {
     protected $clients;
     protected $table;
+    protected $conn;
     public function __construct()
     {
+        $this->conn = ConnectionDB::GetConnect();
         $this->clients = new \SplObjectStorage;
         //chỉ giữ các đối tượng, giúp tiết kiệm bộ nhớ vì nó không cần phải sao chép dữ liệu cho từng đối tượng.
         // Tìm kiếm và quản lý các đối tượng trong SplObjectStorage thường hiệu quả hơn so với các cấu trúc dữ liệu khác khi làm việc với nhiều đối tượng.
@@ -32,59 +34,66 @@ class Chat implements MessageComponentInterface
 
     public function onMessage(ConnectionInterface $from, $msg)
     {
-        // lưu tin nhắn vào database
-        $conn = ConnectionDB::GetConnect();
-        $data = json_decode($msg, true);
-        if (isset($data['message'], $data['from'], $data['to'], $data['time'], $data['sender'])) {
-            $message = $data['message'];
-            $sender = $data['from'];
-            $receiver = $data['to'];
-            $time = $data['time'];
-            $type_sender = $data['sender'];
-            // thêm người dùng nhắn tin vào danh sách nhắn tin
+        try {
+            $this->conn->beginTransaction();
+            // lưu tin nhắn vào database
+            $data = json_decode($msg, true);
+            if (isset($data['message'], $data['from'], $data['to'], $data['time'], $data['sender'])) {
+                $message = $data['message'];
+                $sender = $data['from'];
+                $receiver = $data['to'];
+                $time = $data['time'];
+                $type_sender = $data['sender'];
+                // thêm người dùng nhắn tin vào danh sách nhắn tin
 
-            // nếu người dùng không phải admin thì người nhắn vào list_user_chat_to_user
-            if ($data['sender'] !== 'admin') {
-                $query2 = $conn->prepare("select id from list_users_chat_to_admin where id_user=:id_user");
-                $query2->execute(['id_user' => $sender]);
-                // nếu không tồn tại kết quả thì thêm người dùng vào
-                if ($query2->rowCount() < 1) {
-                    $query3 = $conn->prepare("insert into list_users_chat_to_admin (id_user) values (:id_user)");
-                    $query3->execute(['id_user' => $sender]);
+                // nếu người dùng không phải admin thì người nhắn vào list_user_chat_to_user
+                if ($data['sender'] !== 'admin') {
+                    $query2 = $this->conn->prepare("select id from list_users_chat_to_admin where id_user=:id_user");
+                    $query2->execute(['id_user' => $sender]);
+                    // nếu không tồn tại kết quả thì thêm người dùng vào
+                    if ($query2->rowCount() < 1) {
+                        $query3 = $this->conn->prepare("insert into list_users_chat_to_admin (id_user) values (:id_user)");
+                        $query3->execute(['id_user' => $sender]);
+                    }
                 }
-            }
 
-            // lưu tin nhắn vào db
-            $query = $conn->prepare("INSERT INTO messages (id_sender, id_receiver, type_sender, message, create_at) VALUES (:id_sender, :id_receiver, :type_sender, :message, :date)");
-            $query->execute([
-                'id_sender' => $sender,
-                'id_receiver' => $receiver,
-                'type_sender' => $type_sender,
-                'message' => $message,
-                'date' => $time,
-            ]);
-            echo ($data['sender']);
-        }
-        // kiểm tra xem đây có phải tin nhắn của admin không
-        if (isset($data['to']) && $data['to'] === 'admin') {
-            foreach ($this->clients as $client) {
-                // Gửi tin nhắn đến tất cả các client, ngoại trừ người gửi
-                if ($client !== $from && $client->resourceId == 8) {
-                    $client->send(json_encode([
-                        'from' => 'user',
-                        'message' => $data['message']
-                        //  thông báo tin nhắn đến admin
+                // lưu tin nhắn vào db
+                $query = $this->conn->prepare("INSERT INTO messages (id_sender, id_receiver, type_sender, message, create_at) VALUES (:id_sender, :id_receiver, :type_sender, :message, :date)");
+                $query->execute([
+                    'id_sender' => $sender,
+                    'id_receiver' => $receiver,
+                    'type_sender' => $type_sender,
+                    'message' => $message,
+                    'date' => $time,
+                ]);
+                echo ($data['sender']);
 
-                    ]));
+                // kiểm tra xem đây có phải tin nhắn của admin không
+                if (isset($data['to']) && $data['to'] === 'admin') {
+                    foreach ($this->clients as $client) {
+                        // Gửi tin nhắn đến tất cả các client, ngoại trừ người gửi
+                        if ($client !== $from && $client->resourceId == 8) {
+                            $client->send(json_encode([
+                                'from' => 'user',
+                                'message' => $data['message']
+                                //  thông báo tin nhắn đến admin
+
+                            ]));
+                        }
+                    }
+                } else {
+                    // Gửi tin nhắn đến tất cả clients ngoại trừ người gửi
+                    foreach ($this->clients as $client) {
+                        if ($from !== $client) {
+                            $client->send($msg);
+                        }
+                    }
                 }
+                $this->conn->commit();
             }
-        } else {
-            // Gửi tin nhắn đến tất cả clients ngoại trừ người gửi
-            foreach ($this->clients as $client) {
-                if ($from !== $client) {
-                    $client->send($msg);
-                }
-            }
+        } catch (Throwable $e) {
+            $this->conn->rollBack();
+            echo $e;
         }
     }
     public function onClose(ConnectionInterface $conn)
@@ -100,6 +109,7 @@ class Chat implements MessageComponentInterface
     }
     public static function RunServerSocket()
     {
+        // CHẠY server socket
         try {
             $server = IoServer::factory(
                 new HttpServer(
@@ -115,6 +125,7 @@ class Chat implements MessageComponentInterface
         }
         echo ("Connect Successful");
     }
+    // kiểm tra cổng được dùng chưa
     private static function isPortInUse($port)
     {
         $connection = @fsockopen('localhost', $port);
@@ -125,4 +136,5 @@ class Chat implements MessageComponentInterface
         return false;
     }
 }
+// php WebSocket/websocket.php
 Chat::RunServerSocket();

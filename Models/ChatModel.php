@@ -47,9 +47,12 @@ class ChatModel extends BaseModel
     public function updateStatusIsReadChatUserModel($id)
     {
         try {
+            $this->conn->beginTransaction();
             $query = $this->conn->prepare("update list_users_chat_to_admin set isRead=:isRead where id_user=:id_user");
             $query->execute(['isRead' => 1, 'id_user' => $id]);
+            $this->conn->commit();
         } catch (Throwable $e) {
+            $this->conn->rollBack();
             return false;
         }
         return true;

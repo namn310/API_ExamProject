@@ -4,14 +4,25 @@ class QuestionModel extends BaseModel
 {
     protected $table;
     protected $QuestionModel;
+    protected $conn;
     public function __construct()
     {
+        $this->conn = ConnectionDB::GetConnect();
         $this->table = 'questions';
         $this->QuestionModel = new BaseModel($this->table);
     }
     public function index()
     {
         return $this->QuestionModel->index();
+    }
+    public function checkExtensionImage($Extensionimage)
+    {
+        $allowedExtensions = ['jpg', 'jpeg', 'png', 'gif', 'pdf'];
+        if (in_array(strtolower($Extensionimage), $allowedExtensions)) {
+            return true;
+        } else {
+            return false;
+        }
     }
     public function create($data2)
     {
@@ -21,30 +32,38 @@ class QuestionModel extends BaseModel
             $data[$key] = $value;
         }
         $numberAnswer = json_decode($_POST['answerlist'], true);
-        $conn = ConnectionDB::GetConnect();
         if (isset($_FILES['image'])) {
-            $folder = __DIR__ . '/../assets/image/Question/';
-            if (!is_dir($folder)) {
-                mkdir($folder, 0777, true);  // Tạo thư mục với quyền ghi đầy đủ
+            $fileInfo = pathinfo($_FILES['image']['name']);
+            if ($this->checkExtensionImage($fileInfo) == true) {
+                $folder = __DIR__ . '/../assets/image/Question/';
+                if (!is_dir($folder)) {
+                    mkdir($folder, 0777, true);  // Tạo thư mục với quyền ghi đầy đủ
+                }
+                $image_name = time() . '_' . basename($_FILES['image']['name']);
+                $upload_file = $folder . $image_name;
+                $data['image'] = $image_name;
+                move_uploaded_file($_FILES['image']['tmp_name'], $upload_file);
+            } else {
+                echo json_encode(['message' => "File ảnh không đúng định dạng !"]);
+                exit;
             }
-            $image_name = time() . '_' . basename($_FILES['image']['name']);
-            $upload_file = $folder . $image_name;
-            $data['image'] = $image_name;
-            move_uploaded_file($_FILES['image']['tmp_name'], $upload_file);
         } else {
             $data['image'] = '';
         }
         // return $this->QuestionModel->create($data);
         // lấy tên cột từ data;
         $columns = implode(",", array_keys($data));
+        $query = $this->conn->prepare("insert into $this->table ($columns) values ($value) ");
         // // prepare giá trị truyền vào sql
         // // lấy giá trị từ data
         $value = ":" . implode(",:", array_keys($data));
         // // prepare query
-        $query = $conn->prepare("insert into $this->table ($columns) values ($value) ");
+
         try {
+            $this->conn->beginTransaction();
+            $query = $this->conn->prepare("insert into $this->table ($columns) values ($value) ");
             $query->execute($data);
-            $LastInsertId = $conn->lastInsertId();
+            $LastInsertId = $this->conn->lastInsertId();
             foreach ($numberAnswer as $index => $value) {
                 if (isset($_FILES["answerImage_$index"])) {
                     $folderImgAnswer = __DIR__ . '/../assets/image/AnswerQuestion/';
@@ -57,11 +76,13 @@ class QuestionModel extends BaseModel
                     // lưu file vào đường dẫn
                     move_uploaded_file($_FILES["answerImage_$index"]['tmp_name'], $upload_file_ImgAnswer);
                     // thêm ảnh vào bảng
-                    $queryImage = $conn->prepare("insert into image_answers set idQues=:idQues,imageAns=:image,stt=:stt");
+                    $queryImage = $this->conn->prepare("insert into image_answers set idQues=:idQues,imageAns=:image,stt=:stt");
                     $queryImage->execute(['idQues' => $LastInsertId, 'image' => $imageQuestionName, 'stt' => $index]);
                 }
             }
+            $this->conn->commit();
         } catch (Throwable $e) {
+            $this->conn->rollBack();
             echo json_encode(['message' => "Có lỗi xảy ra " . $e]);
         }
         echo json_encode(['message' => "Thêm thành công"]);
@@ -73,22 +94,23 @@ class QuestionModel extends BaseModel
     // lấy ảnh của câu trả lời
     public function getImageAnswerModel($id)
     {
-        $conn = ConnectionDB::GetConnect();
-        $query = $conn->prepare("select * from image_answers where idQues=:id");
+
+        $query = $this->conn->prepare("select * from image_answers where idQues=:id");
         $query->execute(['id' => $id]);
         return $query->fetchAll();
     }
     public function delete($id)
     {
         try {
+            $this->conn->beginTransaction();
             // xóa hình ảnh câu hỏi nếu có
             // Folder ảnh đề bài
             $folder = __DIR__ . '/../assets/image/Question/';
             // Folder ảnh câu hỏi
             $folderImgAnswer = __DIR__ . '/../assets/image/AnswerQuestion/';
-            $conn = ConnectionDB::GetConnect();
+
             // Xóa ảnh các câu trả lời của câu hỏi
-            $query3 = $conn->prepare("select imageAns from image_answers where idQues=:id");
+            $query3 = $this->conn->prepare("select imageAns from image_answers where idQues=:id");
             $query3->execute(['id' => $id]);
             foreach ($query3->fetchAll() as $row) {
                 $oldImg = $row->imageAns;
@@ -100,7 +122,7 @@ class QuestionModel extends BaseModel
                 }
             }
             // Xóa ảnh đề bài của câu hỏi
-            $query2 = $conn->prepare("select image from $this->table where id=:id");
+            $query2 = $this->conn->prepare("select image from $this->table where id=:id");
             $query2->execute(['id' => $id]);
             $result = $query2->fetch();
             $img = $result->image;
@@ -111,9 +133,11 @@ class QuestionModel extends BaseModel
                 }
             }
             // xóa câu hỏi
-            $query = $conn->prepare("delete from $this->table where id=:id");
+            $query = $this->conn->prepare("delete from $this->table where id=:id");
             $query->execute(['id' => $id]);
+            $this->conn->commit();
         } catch (Throwable $e) {
+            $this->conn->rollBack();
             return false;
         }
         return true;
@@ -132,13 +156,19 @@ class QuestionModel extends BaseModel
         // link file ảnh câu trả lời
         $folderImgAnswer = __DIR__ . '/../assets/image/AnswerQuestion/';
         if (isset($_FILES['image'])) {
-            if (!is_dir($folder)) {
-                mkdir($folder, 0777, true);  // Tạo thư mục với quyền ghi đầy đủ
+            $fileInfo = pathinfo($_FILES['image']['name']);
+            if ($this->checkExtensionImage($fileInfo) == true) {
+                if (!is_dir($folder)) {
+                    mkdir($folder, 0777, true);  // Tạo thư mục với quyền ghi đầy đủ
+                }
+                $image_name = time() . '_' . basename($_FILES['image']['name']);
+                $upload_file = $folder . $image_name;
+                $data['image'] = $image_name;
+                move_uploaded_file($_FILES['image']['tmp_name'], $upload_file);
+            } else {
+                echo json_encode(['message' => "File ảnh không đúng định dạng !"]);
+                exit;
             }
-            $image_name = time() . '_' . basename($_FILES['image']['name']);
-            $upload_file = $folder . $image_name;
-            $data['image'] = $image_name;
-            move_uploaded_file($_FILES['image']['tmp_name'], $upload_file);
         } else {
             if (!empty($data['image'])) {
                 $data['image'] = $data['image'];
@@ -157,8 +187,8 @@ class QuestionModel extends BaseModel
         // ví dụ chuỗi string sẽ có dạng name=:name,....
         // echo $setClause;
         try {
-            $conn = ConnectionDB::GetConnect();
-            $query2 = $conn->prepare("select * from $this->table where id=:id LIMIT 1");
+            $this->conn->beginTransaction();
+            $query2 = $this->conn->prepare("select * from $this->table where id=:id LIMIT 1");
             $query2->execute(['id' => $id]);
             $result = $query2->fetch();
             $img = $result->image;
@@ -166,7 +196,7 @@ class QuestionModel extends BaseModel
             if (file_exists($oldFileImage)) {
                 unlink($oldFileImage);
             }
-            $query = $conn->prepare("update $this->table set $setClause where id=:id");
+            $query = $this->conn->prepare("update $this->table set $setClause where id=:id");
             $arrayId = ['id' => $id];
             //merge mảng để execute query
             $arrayData = array_merge($data, $arrayId);
@@ -177,7 +207,7 @@ class QuestionModel extends BaseModel
                 // nếu có thì tiến hành update
                 if (isset($_FILES["answerImage_$index"])) {
                     // lấy ảnh từ bảng
-                    $getOldImageAnswer = $conn->prepare("select imageAns from image_answers where idQues=:id and stt=:stt");
+                    $getOldImageAnswer = $this->conn->prepare("select imageAns from image_answers where idQues=:id and stt=:stt");
                     $getOldImageAnswer->execute(['id' => $id, 'stt' => $index]);
                     $result = $getOldImageAnswer->fetch();
                     $OldImageAnswer = $result->imageAns;
@@ -195,13 +225,13 @@ class QuestionModel extends BaseModel
                     $upload_file_ImgAnswer = $folderImgAnswer . $imageQuestionName;
                     move_uploaded_file($_FILES["answerImage_$index"]['tmp_name'], $upload_file_ImgAnswer);
                     // cập nhật lại hình ảnh trong table
-                    $queryImage2 = $conn->prepare("update image_answers set imageAns=:imageAns where idQues=:idQues and stt=:stt");
+                    $queryImage2 = $this->conn->prepare("update image_answers set imageAns=:imageAns where idQues=:idQues and stt=:stt");
                     $queryImage2->execute(['idQues' => $id, 'imageAns' => $imageQuestionName, 'stt' => $index]);
                 }
                 // Nếu không có thì người dùng đã xóa ảnh câu trả lời => tiến hành xóa ảnh trong folder và table
                 else {
                     // // lấy ảnh từ bảng
-                    // $getOldImageAnswer = $conn->prepare("select imageAns from image_answers where idQues=:id and stt=:stt");
+                    // $getOldImageAnswer = $this->conn->prepare("select imageAns from image_answers where idQues=:id and stt=:stt");
                     // $getOldImageAnswer->execute(['id' => $id, 'stt' => $index]);
                     // $result = $getOldImageAnswer->fetch();
                     // $OldImageAnswer = $result->imageAns;
@@ -210,13 +240,13 @@ class QuestionModel extends BaseModel
                     //     unlink($OldImageAnswerFile);
                     // }
                     // // xóa ảnh của câu trả lời
-                    // $query3 = $conn->prepare("delete from image_answers where idQues=:id and stt=:stt");
+                    // $query3 = $this->conn->prepare("delete from image_answers where idQues=:id and stt=:stt");
                     // $query3->execute(['id'=>$id,'stt'=>$index]);
                 }
             }
             // Xóa ảnh của đề bài
             // nếu sau khi update người dùng xóa ảnh của câu hỏi đi thì xóa ảnh của câu hỏi trong folder
-            $query4 = $conn->prepare("select image from $this->table where id=:id");
+            $query4 = $this->conn->prepare("select image from $this->table where id=:id");
             $query4->execute(['id' => $id]);
             $result = $query4->fetch();
             $img2 = $result->image;
@@ -226,7 +256,9 @@ class QuestionModel extends BaseModel
                     unlink($oldFileImage);
                 }
             }
+            $this->conn->commit();
         } catch (Throwable $e) {
+            $this->conn->rollBack();
             return false;
             // echo json_encode($e);
         }
@@ -235,9 +267,9 @@ class QuestionModel extends BaseModel
     }
     public function getUserCreate()
     {
-        $conn = ConnectionDB::GetConnect();
+
         try {
-            $query = $conn->prepare("select name,id from users where role=:role");
+            $query = $this->conn->prepare("select name,id from users where role=:role");
             $query->execute(['role' => 'admin']);
         } catch (Throwable $e) {
             echo json_encode(['message' => "Lỗi" . $e]);

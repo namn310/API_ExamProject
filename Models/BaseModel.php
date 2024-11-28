@@ -54,11 +54,16 @@ class BaseModel
         // prepare giá trị truyền vào sql
         // lấy giá trị từ data
         $value = ":" . implode(",:", array_keys($data));
-        // prepare query
-        $query = $this->conn->prepare("insert into $this->table ($columns) values ($value) ");
         try {
+            // prepare query
+            // dùng transaction để đảm bảo tính toàn vẹn của dữ liệu
+            $this->conn->beginTransaction();
+            $query = $this->conn->prepare("insert into $this->table ($columns) values ($value) ");
             $query->execute($data);
+            $this->conn->commit();
         } catch (Throwable $e) {
+            // nếu có lỗi thì hoàn tác lại query trên
+            $this->conn->rollBack();
             return false;
         }
         return true;
@@ -78,9 +83,12 @@ class BaseModel
     public function delete($id)
     {
         try {
+            $this->conn->rollBack();
             $query = $this->conn->prepare("delete from $this->table where id=:id");
             $query->execute(['id' => $id]);
+            $this->conn->commit();
         } catch (Throwable $e) {
+            $this->conn->rollBack();
             return false;
         }
         return true;
@@ -92,22 +100,25 @@ class BaseModel
         // foreach ($data as $key => $value) {
         //     $data[$key] = htmlspecialchars($value, ENT_QUOTES, 'UTF-8');
         // }
-        $string = "";
-        $columns = implode(",", array_keys($data));
-        $columns_set_name = explode(',', $columns);
-        foreach ($columns_set_name as $row) {
-            $string .= $row . '=:' . $row . ',';
-        }
-        $setClause = rtrim($string, ",");
-        // ví dụ chuỗi string sẽ có dạng name=:name,....
-        // echo $setClause;
         try {
+            $string = "";
+            $columns = implode(",", array_keys($data));
+            $columns_set_name = explode(',', $columns);
+            foreach ($columns_set_name as $row) {
+                $string .= $row . '=:' . $row . ',';
+            }
+            $setClause = rtrim($string, ",");
+            // ví dụ chuỗi string sẽ có dạng name=:name,....
+            // echo $setClause;
+            $this->conn->beginTransaction();
             $query = $this->conn->prepare("update $this->table set $setClause where id=:id");
             $arrayId = ['id' => $id];
             //merge mảng để execute query
             $arrayData = array_merge($data, $arrayId);
             $query->execute($arrayData);
+            $this->conn->commit();
         } catch (Throwable $e) {
+            $this->conn->rollBack();
             return false;
             // echo json_encode($e);
         }

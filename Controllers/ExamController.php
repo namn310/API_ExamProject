@@ -18,8 +18,9 @@ class ExamsController
     }
     public function detail($id)
     {
-        $result = $this->ExamModel->read($id);
-        echo json_encode(['data' => $result]);
+        $this->ExamModel->read($id);
+        // $result = $this->ExamModel->read($id);
+        // echo json_encode(['data' => $result]);
     }
     public function create()
     {

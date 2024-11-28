@@ -1,6 +1,10 @@
 <?php
 class ConnectionDB
 {
+    private static $instance = null; // Lưu trữ thể hiện kết nối duy nhất
+    private static $conn = null;     // Lưu trữ kết nối PDO
+    private function __construct() {}
+
     public static function loadEnv($path)
     {
         if (!file_exists($path)) {
@@ -26,22 +30,31 @@ class ConnectionDB
             $_ENV[$key] = $value;
         }
     }
+    // đảm bảo chỉ có một kết nối được tạo ra 
     public static function GetConnect()
     {
-        // đọc file env
-        self::loadEnv(__DIR__ . '/../.env');
-        $dbConnection = getenv('DB_CONNECTION');
-        $dbHost = getenv('DB_HOST');
-        $dbName = getenv('DB_DATABASE');
-        $dbUser = getenv('DB_USERNAME');
-        $dbPass = getenv('DB_PASSWORD');
-        try {
-            $conn = new PDO("$dbConnection:host=$dbHost;dbname=$dbName", $dbUser, $dbPass);
-            $conn->setAttribute(PDO::ATTR_DEFAULT_FETCH_MODE, PDO::FETCH_OBJ);
-            $conn->exec("set names utf8");
-        } catch (Throwable $e) {
-            echo json_encode("Error in connect database".$e);  
+        // Nếu chưa có kết nối nào, tạo một kết nối mới
+        if (self::$conn === null) {
+            // Đọc file env
+            self::loadEnv(__DIR__ . '/../.env');
+            $dbConnection = getenv('DB_CONNECTION');
+            $dbHost = getenv('DB_HOST');
+            $dbName = getenv('DB_DATABASE');
+            $dbUser = getenv('DB_USERNAME');
+            $dbPass = getenv('DB_PASSWORD');
+
+            try {
+                self::$conn = new PDO("$dbConnection:host=$dbHost;dbname=$dbName", $dbUser, $dbPass);
+                self::$conn->setAttribute(PDO::ATTR_DEFAULT_FETCH_MODE, PDO::FETCH_OBJ);
+                self::$conn->exec("set names utf8");
+            } catch (Throwable $e) {
+                // Xử lý lỗi kết nối
+                echo json_encode("Error in connect database: " . $e->getMessage());
+                exit; // Dừng ứng dụng nếu không thể kết nối
+            }
         }
-        return $conn;
+
+        // Trả về kết nối hiện tại
+        return self::$conn;
     }
 }
