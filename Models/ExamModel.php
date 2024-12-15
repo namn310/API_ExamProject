@@ -17,6 +17,7 @@ class ExamModel extends BaseModel
     {
         return $this->ExamModel->index();
     }
+    // tạo mới bài kiểm tra random câu hỏi
     public function createExam($data)
     {
         $columns = implode(",", array_keys($data));
@@ -27,6 +28,7 @@ class ExamModel extends BaseModel
         // echo json_encode($data['category']);
         $cat = $data['category'];
         try {
+            $this->conn->beginTransaction();
             // Thực thi câu lệnh
             $query->execute($data);
 
@@ -43,7 +45,6 @@ class ExamModel extends BaseModel
             $questionQuery->execute();
             $questions = $questionQuery->fetchAll(PDO::FETCH_ASSOC);
             // Lưu các câu hỏi vào bảng exams_questions
-            $this->conn->beginTransaction();
             foreach ($questions as $question) {
                 $examQuestionQuery = $this->conn->prepare("INSERT INTO questions_exam (id_exam, id_ques) VALUES (:id_exam, :id_ques)");
                 $examQuestionQuery->execute([
@@ -60,6 +61,38 @@ class ExamModel extends BaseModel
 
         return true;
     }
+    // tạo mới bài kiểm tra tùy ý số lượng câu hỏi 
+    public function createExamOptionModel($data)
+    {
+        try {
+            $this->conn->beginTransaction();
+            $data['totalQuestion'] = 0;
+            $columns = implode(",", array_keys($data));
+            // Lấy giá trị từ data, dùng để prepare statement
+            $value = ":" . implode(",:", array_keys($data));
+            // Chuẩn bị câu lệnh SQL để chèn kỳ thi mới vào bảng exams
+            $query = $this->conn->prepare("INSERT INTO exams ($columns) VALUES ($value)");
+            $query->execute($data);
+            $lastInsertId =  $this->conn->lastInsertId();
+            $this->conn->commit();
+            echo json_encode(['result' => $lastInsertId, 'status' => 'success']);
+        } catch (Throwable $e) {
+            // return false;
+            $this->conn->rollback();
+            echo json_encode(['result' => "Có lỗi xảy ra !", 'status' => 'error']);
+        }
+    }
+    //lấy tên bài kiểm tra
+    public function getNameExamModel($id)
+    {
+        try {
+            $query = $this->conn->prepare("select title from exams where id=:id");
+            $query->execute(['id' => $id]);
+            return $query->fetch();
+        } catch (Throwable $e) {
+            return null;
+        }
+    }
     public function read($id)
     {
         $result = $this->ExamModel->read($id);
@@ -70,7 +103,7 @@ class ExamModel extends BaseModel
     }
     public function delete($id)
     {
-        return $this->ExamModel->delete($id);
+        $this->ExamModel->delete($id);
     }
     public function update($data, $id)
     {

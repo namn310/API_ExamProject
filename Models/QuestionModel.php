@@ -13,16 +13,68 @@ class QuestionModel extends BaseModel
     }
     public function index()
     {
-        return $this->QuestionModel->index();
+        // lấy id đầu tiên trong danh mục câu hỏi
+        $query2 = $this->conn->query("select id from category_exams limit 1");
+        $category = $query2->fetch()->id;
+        // phân trang
+        $page = isset($_GET['page']) ? $_GET['page'] : 1;
+        // nếu có trường category thì lấy còn không thì mặc định lấy category đầu tiên
+        $category = isset($_GET['category']) ? $_GET['category'] : 0;
+        $limit = 10;
+        $offset = ($page - 1) * $limit;
+        if ($category == 0 || $category === ' ') {
+            // lấy tổng số bản ghi trong table
+            $count_query = $this->conn->prepare("SELECT COUNT(*) as total from $this->table");
+            $count_query->execute();
+            $record_total = $count_query->fetch(PDO::FETCH_ASSOC)['total'];
+            // tổng số trang
+            // ceil hàm lấy phần nguyên
+            $page_total = ceil($record_total / $limit);
+            // lấy danh sách có phân trang
+            // nếu trường category không được chọn thì lấy tất
+            $query = $this->conn->prepare("select * from $this->table LIMIT :limit OFFSET :offset");
+            // $query = $this->conn->prepare("select * from $this->table");
+            // gán các giá trị nguyên cho limit và offset
+            $query->bindParam(':limit', $limit, PDO::PARAM_INT);
+            $query->bindParam(':offset', $offset, PDO::PARAM_INT);
+            // $query->execute([':limit' => (int)$limit, ':offset' => (int)$offset]);
+            $query->execute();
+            return ['data' => $query->fetchAll(), 'limit' => $limit, 'current_page' => $page, 'total_page' => $page_total, 'record_total' => $record_total, 'catIf' => $category];
+            // return $query->fetchAll();
+        } else {
+            // lấy tổng số bản ghi trong table
+            $count_query = $this->conn->prepare("SELECT COUNT(*) as total from $this->table where Subject=:category");
+            $count_query->execute(['category' => $category]);
+            $record_total = $count_query->fetch(PDO::FETCH_ASSOC)['total'];
+            // tổng số trang
+            // ceil hàm lấy phần nguyên
+            $page_total = ceil($record_total / $limit);
+            // lấy danh sách có phân trang
+            // nếu trường category không được chọn thì lấy tất
+            $query = $this->conn->prepare("select * from $this->table where Subject=:category LIMIT :limit OFFSET :offset");
+            // $query = $this->conn->prepare("select * from $this->table");
+            // gán các giá trị nguyên cho limit và offset
+            $query->bindParam(':category', $category, PDO::PARAM_INT);
+            $query->bindParam(':limit', $limit, PDO::PARAM_INT);
+            $query->bindParam(':offset', $offset, PDO::PARAM_INT);
+            // $query->execute([':limit' => (int)$limit, ':offset' => (int)$offset]);
+            $query->execute();
+            return ['data' => $query->fetchAll(), 'limit' => $limit, 'current_page' => $page, 'total_page' => $page_total, 'record_total' => $record_total, 'cat' => $category];
+        }
     }
-    public function checkExtensionImage($Extensionimage)
+    public function checkExtensionImage($Extension)
     {
         $allowedExtensions = ['jpg', 'jpeg', 'png', 'gif', 'pdf'];
-        if (in_array(strtolower($Extensionimage), $allowedExtensions)) {
-            return true;
-        } else {
+        $Extensionimage = $Extension['extension'];
+        // Validate input
+        if (!is_string($Extensionimage) || empty($Extensionimage)) {
             return false;
         }
+        // Convert to lowercase and trim whitespace
+        $extension = strtolower(trim($Extensionimage));
+
+        // Check if the extension is allowed
+        return in_array($extension, $allowedExtensions);
     }
     public function create($data2)
     {
@@ -53,7 +105,7 @@ class QuestionModel extends BaseModel
         // return $this->QuestionModel->create($data);
         // lấy tên cột từ data;
         $columns = implode(",", array_keys($data));
-        $query = $this->conn->prepare("insert into $this->table ($columns) values ($value) ");
+        // $query = $this->conn->prepare("insert into $this->table ($columns) values ($value) ");
         // // prepare giá trị truyền vào sql
         // // lấy giá trị từ data
         $value = ":" . implode(",:", array_keys($data));
@@ -142,6 +194,29 @@ class QuestionModel extends BaseModel
         }
         return true;
     }
+    // xóa câu hỏi trong bài kiểm tra
+    public function deleteQuestionInExamModel($idQues, $idExam)
+    {
+        try {
+            if ($this->delete($idQues) == true) {
+                $this->conn->beginTransaction();
+                $queryTotalQuestionExam = $this->conn->prepare("select id,totalQuestion from exams where id=:id");
+                $queryTotalQuestionExam->execute(['id' => $idExam]);
+                $TotalQuestion = $queryTotalQuestionExam->fetch()->totalQuestion;
+                // cập nhật lại số lượng câu hỏi của bài thi sau khi đã xóa câu hỏi
+                $query = $this->conn->prepare("update exams set totalQuestion=:total where id=:id");
+                $query->execute(['total' => $TotalQuestion - 1, 'id' => $idExam]);
+                $this->conn->commit();
+                return true;
+            } else {
+                $this->conn->rollBack();
+                return false;
+            }
+        } catch (Throwable $e) {
+            $this->conn->rollBack();
+            return false;
+        }
+    }
     public function update($data2, $id)
     {
         $data = [];
@@ -150,7 +225,6 @@ class QuestionModel extends BaseModel
             $data[$key] = $value;
         }
         $numberAnswer = json_decode($_POST['answerlist'], true);
-
         // link file ảnh câu hỏi
         $folder = __DIR__ . '/../assets/image/Question/';
         // link file ảnh câu trả lời
@@ -166,7 +240,7 @@ class QuestionModel extends BaseModel
                 $data['image'] = $image_name;
                 move_uploaded_file($_FILES['image']['tmp_name'], $upload_file);
             } else {
-                echo json_encode(['message' => "File ảnh không đúng định dạng !"]);
+                echo json_encode(['message' => 'File ảnh không đúng định dạng']);
                 exit;
             }
         } else {
@@ -193,9 +267,9 @@ class QuestionModel extends BaseModel
             $result = $query2->fetch();
             $img = $result->image;
             $oldFileImage = $folder . $img;
-            if (file_exists($oldFileImage)) {
-                unlink($oldFileImage);
-            }
+            // if (file_exists($oldFileImage)) {
+            //     unlink($oldFileImage);
+            // }
             $query = $this->conn->prepare("update $this->table set $setClause where id=:id");
             $arrayId = ['id' => $id];
             //merge mảng để execute query
@@ -231,17 +305,20 @@ class QuestionModel extends BaseModel
                 // Nếu không có thì người dùng đã xóa ảnh câu trả lời => tiến hành xóa ảnh trong folder và table
                 else {
                     // // lấy ảnh từ bảng
-                    // $getOldImageAnswer = $this->conn->prepare("select imageAns from image_answers where idQues=:id and stt=:stt");
-                    // $getOldImageAnswer->execute(['id' => $id, 'stt' => $index]);
-                    // $result = $getOldImageAnswer->fetch();
-                    // $OldImageAnswer = $result->imageAns;
-                    // $OldImageAnswerFile = $folderImgAnswer . $OldImageAnswer;
-                    // if (file_exists($OldImageAnswerFile)) {
-                    //     unlink($OldImageAnswerFile);
-                    // }
-                    // // xóa ảnh của câu trả lời
-                    // $query3 = $this->conn->prepare("delete from image_answers where idQues=:id and stt=:stt");
-                    // $query3->execute(['id'=>$id,'stt'=>$index]);
+                    $getOldImageAnswer = $this->conn->prepare("select imageAns from image_answers where idQues=:id and stt=:stt");
+                    $getOldImageAnswer->execute(['id' => $id, 'stt' => $index]);
+                    $result = $getOldImageAnswer->fetch();
+                    // kiểm tra xem dữ liệu lấy ra có rỗng hay không
+                    if ($result && !empty($result->imageAns)) {
+                        $OldImageAnswer = $result->imageAns;
+                        $OldImageAnswerFile = $folderImgAnswer . $OldImageAnswer;
+                        if (file_exists($OldImageAnswerFile)) {
+                            unlink($OldImageAnswerFile);
+                        }
+                        // xóa ảnh của câu trả lời
+                        $query3 = $this->conn->prepare("delete from image_answers where idQues=:id and stt=:stt");
+                        $query3->execute(['id' => $id, 'stt' => $index]);
+                    }
                 }
             }
             // Xóa ảnh của đề bài
@@ -249,11 +326,13 @@ class QuestionModel extends BaseModel
             $query4 = $this->conn->prepare("select image from $this->table where id=:id");
             $query4->execute(['id' => $id]);
             $result = $query4->fetch();
-            $img2 = $result->image;
-            if (!empty($img2)) {
-                // $oldFileImage = $folder . $img;
-                if (file_exists($oldFileImage)) {
-                    unlink($oldFileImage);
+            if ($result && !empty($result4->image)) {
+                $img2 = $result->image;
+                if (!empty($img2)) {
+                    // $oldFileImage = $folder . $img;
+                    if (file_exists($oldFileImage)) {
+                        unlink($oldFileImage);
+                    }
                 }
             }
             $this->conn->commit();
@@ -275,5 +354,80 @@ class QuestionModel extends BaseModel
             echo json_encode(['message' => "Lỗi" . $e]);
         }
         echo json_encode(['data' => $query->fetchAll()]);
+    }
+    // thêm câu hỏi vào bài kiểm tra tùy chọn
+    public function AddQuestionIntoExamOptionModel($id)
+    {
+        try {
+            $data = [];
+            foreach ($_POST as $key => $value) {
+                // Thêm từng giá trị vào mảng $data với định dạng key => value
+                $data[$key] = $value;
+            }
+            $numberAnswer = json_decode($_POST['answerlist'], true);
+            if (isset($_FILES['image'])) {
+                $fileInfo = pathinfo($_FILES['image']['name']);
+                if ($this->checkExtensionImage($fileInfo) == true) {
+                    $folder = __DIR__ . '/../assets/image/Question/';
+                    if (!is_dir($folder)) {
+                        mkdir($folder, 0777, true);  // Tạo thư mục với quyền ghi đầy đủ
+                    }
+                    $image_name = time() . '_' . basename($_FILES['image']['name']);
+                    $upload_file = $folder . $image_name;
+                    $data['image'] = $image_name;
+                    move_uploaded_file($_FILES['image']['tmp_name'], $upload_file);
+                } else {
+                    echo json_encode(['message' => "File ảnh không đúng định dạng !"]);
+                    exit;
+                }
+            } else {
+                $data['image'] = '';
+            }
+            // return $this->QuestionModel->create($data);
+            // lấy tên cột từ data;
+            $columns = implode(",", array_keys($data));
+            // // prepare giá trị truyền vào sql
+            // // lấy giá trị từ data
+            $value = ":" . implode(",:", array_keys($data));
+            // // prepare query
+            // bắt đầu transaction
+            $this->conn->beginTransaction();
+            $query = $this->conn->prepare("insert into $this->table ($columns) values ($value) ");
+            $query->execute($data);
+            $LastInsertId = $this->conn->lastInsertId();
+            foreach ($numberAnswer as $index => $value) {
+                if (isset($_FILES["answerImage_$index"])) {
+                    $folderImgAnswer = __DIR__ . '/../assets/image/AnswerQuestion/';
+                    if (!is_dir($folderImgAnswer)) {
+                        mkdir($folderImgAnswer, 0777, true);  // Tạo thư mục với quyền ghi đầy đủ
+                    }
+                    // tên file ảnh
+                    $imageQuestionName = time() . '_' . basename($_FILES["answerImage_$index"]['name']);
+                    $upload_file_ImgAnswer = $folderImgAnswer . $imageQuestionName;
+                    // lưu file vào đường dẫn
+                    move_uploaded_file($_FILES["answerImage_$index"]['tmp_name'], $upload_file_ImgAnswer);
+                    // thêm ảnh vào bảng
+                    $queryImage = $this->conn->prepare("insert into image_answers set idQues=:idQues,imageAns=:image,stt=:stt");
+                    $queryImage->execute(['idQues' => $LastInsertId, 'image' => $imageQuestionName, 'stt' => $index]);
+                }
+            }
+            // thêm câu hỏi vào bài thi
+            $queryInsertQuestionIntoExam = $this->conn->prepare("insert into questions_exam (id_ques,id_exam) values (:id_ques,:id_exam)");
+            $queryInsertQuestionIntoExam->execute(['id_ques' => $LastInsertId, 'id_exam' => $id]);
+            // cập nhật lại tổng số lượng câu hỏi trong bài thi
+            $CurrentTotalQuestionInExamQuery = $this->conn->prepare("select id,totalQuestion from exams where id=:id");
+            $CurrentTotalQuestionInExamQuery->execute(['id' => $id]);
+
+            $CurrentTotalQuestionNumber = ($CurrentTotalQuestionInExamQuery->fetch())->totalQuestion;
+            // cập nhật số lượng câu hỏi vào bảng exam
+            $updateTotalQuestionQuery = $this->conn->prepare("update exams set totalQuestion=:total where id=:id");
+            $updateTotalQuestionQuery->execute(['total' => $CurrentTotalQuestionNumber + 1, 'id' => $id]);
+            // commit query
+            $this->conn->commit();
+            return true;
+        } catch (Throwable $e) {
+            $this->conn->rollBack();
+            return false;
+        }
     }
 }

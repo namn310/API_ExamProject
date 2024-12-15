@@ -18,8 +18,10 @@ class BaseModel
     // lấy dữ liệu
     public function index()
     {
+
         // phân trang
         $page = isset($_GET['page']) ? $_GET['page'] : 1;
+        // nếu có trường category thì lấy còn không thì mặc định lấy category đầu tiên
         $limit = 10;
         $offset = ($page - 1) * $limit;
         // lấy tổng số bản ghi trong table
@@ -30,6 +32,8 @@ class BaseModel
         // ceil hàm lấy phần nguyên
         $page_total = ceil($record_total / $limit);
         // lấy danh sách có phân trang
+        // nếu trường category không được chọn thì lấy tất
+
         $query = $this->conn->prepare("select * from $this->table LIMIT :limit OFFSET :offset");
         // $query = $this->conn->prepare("select * from $this->table");
         // gán các giá trị nguyên cho limit và offset
@@ -39,7 +43,6 @@ class BaseModel
         $query->execute();
         return ['data' => $query->fetchAll(), 'limit' => $limit, 'current_page' => $page, 'total_page' => $page_total, 'record_total' => $record_total];
         // return $query->fetchAll();
-
     }
     // create dữ liệu
     public function create($data)
@@ -83,7 +86,7 @@ class BaseModel
     public function delete($id)
     {
         try {
-            $this->conn->rollBack();
+            $this->conn->beginTransaction();
             $query = $this->conn->prepare("delete from $this->table where id=:id");
             $query->execute(['id' => $id]);
             $this->conn->commit();

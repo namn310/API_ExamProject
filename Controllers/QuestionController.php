@@ -97,4 +97,32 @@ class QuestionsController
     {
         return $this->QuestionModel->getUserCreate();
     }
+    // thêm câu hỏi vào bài kiểm tra tùy chọn   
+    public function AddQuestionIntoExamOptionController($id)
+    {
+        try {
+            $result = $this->QuestionModel->AddQuestionIntoExamOptionModel($id);
+            if ($result == true) {
+                echo json_encode(['result' => "success"]);
+            } else {
+                echo json_encode(['result' => "error"]);
+            }
+        } catch (Throwable $e) {
+            echo json_encode(['result' => "error"]);
+        }
+    }
+    public function deleteQuestionInExamController($idQues, $idExam)
+    {
+        try {
+            // echo json_encode(['idQues' => $idQues, 'idExam' => $idExam]);
+            $result = $this->QuestionModel->deleteQuestionInExamModel($idQues, $idExam);
+            if ($result == false) {
+                echo json_encode(['result' => 'false']);
+            } else {
+                echo json_encode(['result' => 'true']);
+            }
+        } catch (Throwable $e) {
+            echo json_encode(['result' => 'false']);
+        }
+    }
 }

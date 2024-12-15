@@ -16,12 +16,19 @@ class ExamsController
         $result = $this->ExamModel->index();
         echo json_encode(['data' => $result]);
     }
+    // lấy tên bài kiểm tra
+    public function getNameExam($id)
+    {
+        $data = $this->ExamModel->getNameExamModel($id);
+        echo json_encode($data);
+    }
     public function detail($id)
     {
         $this->ExamModel->read($id);
         // $result = $this->ExamModel->read($id);
         // echo json_encode(['data' => $result]);
     }
+    // thêm bài kiểm tra Random
     public function create()
     {
         // $checkToken = CheckToken::checkToken();
@@ -39,6 +46,16 @@ class ExamsController
         }
         // } else {
         //     echo json_encode(['message' => "Token không hợp lệ"]);
+        // }
+    }
+    // thêm bài kiểm tra tùy ý câu hỏi
+    public function createExamOptionController()
+    {
+        // try {
+        $data = json_decode(file_get_contents("php://input"), true);
+        $this->ExamModel->createExamOptionModel($data);
+        // } catch (Throwable $e) {
+        //     echo json_encode(["result" => "0"]);
         // }
     }
     public function update($id)

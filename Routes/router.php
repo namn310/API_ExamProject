@@ -50,9 +50,13 @@ $routers = [
         '/exams' => function () use ($ExamsController) {
             $ExamsController->index();
         },
-        // lấy chi tiết bài thi
+        // lấy chi tiết bài thi + tổng comment
         '/exams/detail/(\d+)' => function ($id) use ($ExamsController) {
             $ExamsController->detail($id);
+        },
+        // lấy tên bài kiểm tra
+        '/exams/getNameExam/(\d+)' => function ($id) use ($ExamsController) {
+            $ExamsController->getNameExam($id);
         },
         // lấy danh sách các câu hỏi của bài thi
         '/exams/questions-exams/(\d+)' => function ($id) use ($ExamsController) {
@@ -151,6 +155,10 @@ $routers = [
         '/questions/delete/(\d+)' => function ($id) use ($QuestionsController) {
             $QuestionsController->delete($id);
         },
+        // xóa câu hỏi của bài thi
+        '/exam/delete_question/idQues=(\d+)&idExam=(\d+)' => function ($idQues, $idExam) use ($QuestionsController) {
+            $QuestionsController->deleteQuestionInExamController($idQues, $idExam);
+        },
         // xóa bài thi
         '/exams/delete/(\d+)' => function ($id) use ($ExamsController) {
             $ExamsController->delete($id);
@@ -200,6 +208,14 @@ $routers = [
         // tạo mới bài kiểm tra
         '/exams/create' => function () use ($ExamsController) {
             $ExamsController->create();
+        },
+        // tạo bài kiểm tra tùy ý thêm câu hỏi
+        '/exams/create-exam-option' => function () use ($ExamsController) {
+            $ExamsController->createExamOptionController();
+        },
+        // Thêm câu hỏi vào bài kiểm tra option
+        '/exams/AddQuestionIntoExamOption/(\d+)' => function ($id) use ($QuestionsController) {
+            $QuestionsController->AddQuestionIntoExamOptionController($id);
         },
         // tạo danh mục bài kiểm tra
         '/categoryExam/create' => function () use ($Category_exam) {

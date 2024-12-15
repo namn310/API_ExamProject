@@ -42,7 +42,6 @@ class ConnectionDB
             $dbName = getenv('DB_DATABASE');
             $dbUser = getenv('DB_USERNAME');
             $dbPass = getenv('DB_PASSWORD');
-
             try {
                 self::$conn = new PDO("$dbConnection:host=$dbHost;dbname=$dbName", $dbUser, $dbPass);
                 self::$conn->setAttribute(PDO::ATTR_DEFAULT_FETCH_MODE, PDO::FETCH_OBJ);
