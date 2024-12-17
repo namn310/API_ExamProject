@@ -18,9 +18,8 @@ class BaseModel
     // lấy dữ liệu
     public function index()
     {
-
         // phân trang
-        $page = isset($_GET['page']) ? $_GET['page'] : 1;
+        $page = (isset($_GET['page']) && $_GET['page'] !== '' && $_GET['page'] !== 'undefined') ? $_GET['page'] : 1;
         // nếu có trường category thì lấy còn không thì mặc định lấy category đầu tiên
         $limit = 10;
         $offset = ($page - 1) * $limit;
@@ -33,9 +32,7 @@ class BaseModel
         $page_total = ceil($record_total / $limit);
         // lấy danh sách có phân trang
         // nếu trường category không được chọn thì lấy tất
-
         $query = $this->conn->prepare("select * from $this->table LIMIT :limit OFFSET :offset");
-        // $query = $this->conn->prepare("select * from $this->table");
         // gán các giá trị nguyên cho limit và offset
         $query->bindParam(':limit', $limit, PDO::PARAM_INT);
         $query->bindParam(':offset', $offset, PDO::PARAM_INT);
@@ -64,12 +61,12 @@ class BaseModel
             $query = $this->conn->prepare("insert into $this->table ($columns) values ($value) ");
             $query->execute($data);
             $this->conn->commit();
+            return true;
         } catch (Throwable $e) {
             // nếu có lỗi thì hoàn tác lại query trên
             $this->conn->rollBack();
             return false;
         }
-        return true;
     }
     // read data
     public function read($id)
@@ -90,11 +87,11 @@ class BaseModel
             $query = $this->conn->prepare("delete from $this->table where id=:id");
             $query->execute(['id' => $id]);
             $this->conn->commit();
+            return true;
         } catch (Throwable $e) {
             $this->conn->rollBack();
             return false;
         }
-        return true;
     }
     // update data 
     public function update($data, $id)
@@ -120,12 +117,12 @@ class BaseModel
             $arrayData = array_merge($data, $arrayId);
             $query->execute($arrayData);
             $this->conn->commit();
+            // echo json_encode(2);
+            return true;
         } catch (Throwable $e) {
             $this->conn->rollBack();
             return false;
             // echo json_encode($e);
         }
-        return true;
-        // echo json_encode(2);
     }
 }

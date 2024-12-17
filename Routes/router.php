@@ -1,5 +1,6 @@
 <?php
 include_once  __DIR__ . '/../Controllers/QuestionController.php';
+include_once  __DIR__ . '/../Controllers/ClassController.php';
 include_once  __DIR__ . '/../Controllers/ExamController.php';
 include_once  __DIR__ . '/../Controllers/UserController.php';
 include_once  __DIR__ . '/../Controllers/CategoryExamController.php';
@@ -13,6 +14,7 @@ include_once  __DIR__ . '/../Connection/CheckToken.php';
 include_once  __DIR__ . '/../Routes/handleRouter.php';
 // Initialize the controllers
 $QuestionsController = new QuestionsController();
+$ClassController = new ClassController();
 $ExamsController = new ExamsController();
 $UserController = new UserController();
 $Category_exam = new CategoryExamController();
@@ -45,6 +47,14 @@ $routers = [
         // lấy thông tin người tạo câu hỏi
         '/questions/userCreate' => function () use ($QuestionsController) {
             $QuestionsController->getUser();
+        },
+        // lấy danh sách lớp học
+        '/class' => function () use ($ClassController) {
+            $ClassController->index();
+        },
+        // lấy toàn bộ lớp học
+        '/class/getAll' => function () use ($ClassController) {
+            $ClassController->getAllClassController();
         },
         // lấy danh sách bài thi
         '/exams' => function () use ($ExamsController) {
@@ -81,6 +91,10 @@ $routers = [
         // lấy list danh mục bài thi
         '/category-exam' => function () use ($Category_exam) {
             $Category_exam->index();
+        },
+        // lấy tất cả danh mục bài thi không phân trang
+        '/category-getAll' => function () use ($Category_exam) {
+            $Category_exam->getAllCategoryController();
         },
         // lấy các hỏi thuộc danh mục được chọn
         '/category-question/(\d+)' => function ($id) use ($Category_exam) {
@@ -163,6 +177,14 @@ $routers = [
         '/exams/delete/(\d+)' => function ($id) use ($ExamsController) {
             $ExamsController->delete($id);
         },
+        // xóa danh mục bài thi
+        '/category/delete/(\d+)' => function ($id) use ($Category_exam) {
+            $Category_exam->deleteCategoryController($id);
+        },
+        // xóa lớp học
+        '/class/delete/(\d+)' => function ($id) use ($ClassController) {
+            $ClassController->delete($id);
+        },
         // xóa người dùng
         '/users/delete/(\d+)' => function ($id) use ($UserController) {
             $UserController->delete($id);
@@ -173,6 +195,14 @@ $routers = [
         // cập nhật thông tin bài thi
         '/exams/update/(\d+)' => function ($id) use ($ExamsController) {
             $ExamsController->update($id);
+        },
+        // cập nhật thông tin danh mục
+        '/category/update/(\d+)' => function ($id) use ($Category_exam) {
+            $Category_exam->update($id);
+        },
+        // cập nhật thông tin lớp học
+        '/class/update/(\d+)' => function ($id) use ($ClassController) {
+            $ClassController->update($id);
         },
         // cập nhật người dùng
         '/users/update/(\d+)' => function ($id) use ($UserController) {
@@ -204,6 +234,10 @@ $routers = [
         // cập nhật câu hỏi
         '/questions/update/(\d+)' => function ($id) use ($QuestionsController) {
             $QuestionsController->update($id);
+        },
+        // tạo mới lớp học
+        '/class/create' => function () use ($ClassController) {
+            $ClassController->create();
         },
         // tạo mới bài kiểm tra
         '/exams/create' => function () use ($ExamsController) {

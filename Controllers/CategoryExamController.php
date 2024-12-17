@@ -14,6 +14,11 @@ class CategoryExamController
         $result = $this->CategoryModel->index();
         echo json_encode(['data' => $result]);
     }
+    public function getAllCategoryController()
+    {
+        $result = $this->CategoryModel->getAllCategoryModel();
+        echo json_encode(['data' => $result]);
+    }
     public function detail($id)
     {
         $result = $this->CategoryModel->read($id);
@@ -21,63 +26,54 @@ class CategoryExamController
     }
     public function create()
     {
-        // $checkToken = CheckToken::checkToken();
-        // if ($checkToken === true) {
-            $data = json_decode(file_get_contents("php://input"), true);
-            // kiểm tra dữ liệu tránh truyền script vào input
-            foreach ($data as $key => $value) {
-                $data[$key] = htmlspecialchars($value, ENT_QUOTES, 'UTF-8');
-            }
-            if ($this->CategoryModel->create($data) == false) {
-                echo json_encode(['message' => "Có lỗi xảy ra !"]);
-            } else {
-                echo json_encode(['message' => "Tạo mới danh mục bài thi thành công !"]);
-            }
-        // } else {
-        //     echo json_encode(['message' => "Token không hợp lệ"]);
-        // }
+        $data = json_decode(file_get_contents("php://input"), true);
+        // kiểm tra dữ liệu tránh truyền script vào input
+        $this->CategoryModel->create($data);
     }
     public function update($id)
     {
-        // $checkToken = CheckToken::checkToken();
-        // if ($checkToken === true) {
-            $data = json_decode(file_get_contents("php://input"), true);
-            // kiểm tra dữ liệu tránh truyền script vào input
-            foreach ($data as $key => $value) {
-                $data[$key] = htmlspecialchars($value, ENT_QUOTES, 'UTF-8');
-            }
-            if ($id == 0) {
-                echo json_encode(['message' => 'Dữ liệu danh mục bài thi không tồn tại !']);
+        $data = json_decode(file_get_contents("php://input"), true);
+        // kiểm tra dữ liệu tránh truyền script vào input
+        foreach ($data as $key => $value) {
+            $data[$key] = htmlspecialchars($value, ENT_QUOTES, 'UTF-8');
+        }
+        // $this->CategoryModel->update($data, $id);
+        if ($id == 0) {
+            echo json_encode(['message' => 'Dữ liệu danh mục bài thi không tồn tại !']);
+        } else {
+            if ($this->CategoryModel->update($data, $id) === false) {
+                echo json_encode(['message' => 'Cập nhật danh mục bài thi không thành công !']);
             } else {
-                if ($this->CategoryModel->update($data, $id) == false) {
-                    echo json_encode(['message' => 'Cập nhật danh mục bài thi không thành công !']);
-                } else {
-                    echo json_encode(['message' => 'Cập nhật danh mục bài thi thành công !']);
-                }
+                echo json_encode(['message' => 'Cập nhật danh mục bài thi thành công !']);
             }
-        // } else {
-        //     echo json_encode(['message' => "Token không hợp lệ"]);
-        // }
+        }
     }
 
     public function delete($id)
     {
         // $checkToken = CheckToken::checkToken();
         // if ($checkToken === true) {
-            if ($id == 0) {
-                echo json_encode(['message' => 'Danh mục không tồn tại !']);
+        if ($id == 0) {
+            echo json_encode(['message' => 'Danh mục không tồn tại !']);
+        } else {
+            if ($this->CategoryModel->delete($id) == false) {
+                echo json_encode(['message' => 'Có lỗi xảy ra !']);
             } else {
-                if ($this->CategoryModel->delete($id) == false) {
-                    echo json_encode(['message' => 'Có lỗi xảy ra !']);
-                } else {
-                    echo json_encode(['message' => 'Xóa danh mục thành công !']);
-                }
+                echo json_encode(['message' => 'Xóa danh mục thành công !']);
             }
+        }
         // } else {
         //     echo json_encode(['message' => "Token không hợp lệ"]);
         // }
     }
-
+    public function deleteCategoryController($id)
+    {
+        if ($this->CategoryModel->deleteCategoryModel($id) == true) {
+            echo json_encode(['message' => 'Xóa danh mục bài thi thành công !']);
+        } else {
+            echo json_encode(['message' => 'Xóa danh mục bài thi thất bại !']);
+        }
+    }
     public function getQuestionsCategory($id)
     {
         $result = $this->CategoryModel->readQuestionCategory($id);

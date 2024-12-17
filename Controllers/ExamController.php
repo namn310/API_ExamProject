@@ -35,9 +35,9 @@ class ExamsController
         // if ($checkToken === true) {
         $data = json_decode(file_get_contents("php://input"), true);
         // kiểm tra dữ liệu tránh truyền script vào input
-        foreach ($data as $key => $value) {
-            $data[$key] = htmlspecialchars($value, ENT_QUOTES, 'UTF-8');
-        }
+        // foreach ($data as $key => $value) {
+        //     $data[$key] = htmlspecialchars($value, ENT_QUOTES, 'UTF-8');
+        // }
         // $this->ExamModel->createExam($data);
         if ($this->ExamModel->createExam($data) == false) {
             echo json_encode(['message' => "Có lỗi xảy ra !"]);
@@ -64,18 +64,19 @@ class ExamsController
         // if ($checkToken === true) {
         $data = json_decode(file_get_contents("php://input"), true);
         // kiểm tra dữ liệu tránh truyền script vào input
-        foreach ($data as $key => $value) {
-            $data[$key] = htmlspecialchars($value, ENT_QUOTES, 'UTF-8');
-        }
+        // foreach ($data as $key => $value) {
+        //     $data[$key] = htmlspecialchars($value, ENT_QUOTES, 'UTF-8');
+        // }
         if ($id == 0) {
             echo json_encode(['message' => 'Dữ liệu bài thi không tồn tại !']);
         } else {
             if ($this->ExamModel->update($data, $id) == false) {
                 echo json_encode(['message' => 'Cập nhật bài thi không thành công !']);
             } else {
-                echo json_encode(['message' => 'Cập nhật thông tin bài thi thành công !']);
+                echo json_encode(['message' => 'Cập nhật bài thi thành công !']);
             }
         }
+        // $this->ExamModel->update($data, $id);
         // } else {
         //     echo json_encode(['message' => "Token không hợp lệ"]);
         // }
@@ -98,7 +99,6 @@ class ExamsController
         //     echo json_encode(['message' => "Token không hợp lệ"]);
         // }
     }
-
     public function getQuestionsExam($id)
     {
         $result = $this->ExamModel->readQuestionExam($id);

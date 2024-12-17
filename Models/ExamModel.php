@@ -15,7 +15,54 @@ class ExamModel extends BaseModel
     }
     public function index()
     {
-        return $this->ExamModel->index();
+        // lấy id đầu tiên trong danh mục câu hỏi
+        $query2 = $this->conn->query("select id from category_exams limit 1");
+        $category = $query2->fetch()->id;
+        // phân trang
+        $page = isset($_GET['page']) ? $_GET['page'] : 1;
+        // nếu có trường category thì lấy còn không thì mặc định lấy category đầu tiên
+        $category = isset($_GET['category']) ? $_GET['category'] : 0;
+        $limit = 10;
+        $offset = ($page - 1) * $limit;
+        if ($category == 0 || $category === ' ') {
+            // lấy tổng số bản ghi trong table
+            $count_query = $this->conn->prepare("SELECT COUNT(*) as total from $this->table");
+            $count_query->execute();
+            $record_total = $count_query->fetch(PDO::FETCH_ASSOC)['total'];
+            // tổng số trang
+            // ceil hàm lấy phần nguyên
+            $page_total = ceil($record_total / $limit);
+            // lấy danh sách có phân trang
+            // nếu trường category không được chọn thì lấy tất
+            $query = $this->conn->prepare("select * from $this->table LIMIT :limit OFFSET :offset");
+            // $query = $this->conn->prepare("select * from $this->table");
+            // gán các giá trị nguyên cho limit và offset
+            $query->bindParam(':limit', $limit, PDO::PARAM_INT);
+            $query->bindParam(':offset', $offset, PDO::PARAM_INT);
+            // $query->execute([':limit' => (int)$limit, ':offset' => (int)$offset]);
+            $query->execute();
+            return ['data' => $query->fetchAll(), 'limit' => $limit, 'current_page' => $page, 'total_page' => $page_total, 'record_total' => $record_total, 'catIf' => $category];
+            // return $query->fetchAll();
+        } else {
+            // lấy tổng số bản ghi trong table
+            $count_query = $this->conn->prepare("SELECT COUNT(*) as total from $this->table where category=:category");
+            $count_query->execute(['category' => $category]);
+            $record_total = $count_query->fetch(PDO::FETCH_ASSOC)['total'];
+            // tổng số trang
+            // ceil hàm lấy phần nguyên
+            $page_total = ceil($record_total / $limit);
+            // lấy danh sách có phân trang
+            // nếu trường category không được chọn thì lấy tất
+            $query = $this->conn->prepare("select * from $this->table where category=:category LIMIT :limit OFFSET :offset");
+            // $query = $this->conn->prepare("select * from $this->table");
+            // gán các giá trị nguyên cho limit và offset
+            $query->bindParam(':category', $category, PDO::PARAM_INT);
+            $query->bindParam(':limit', $limit, PDO::PARAM_INT);
+            $query->bindParam(':offset', $offset, PDO::PARAM_INT);
+            // $query->execute([':limit' => (int)$limit, ':offset' => (int)$offset]);
+            $query->execute();
+            return ['data' => $query->fetchAll(), 'limit' => $limit, 'current_page' => $page, 'total_page' => $page_total, 'record_total' => $record_total, 'cat' => $category];
+        }
     }
     // tạo mới bài kiểm tra random câu hỏi
     public function createExam($data)
@@ -103,11 +150,58 @@ class ExamModel extends BaseModel
     }
     public function delete($id)
     {
-        $this->ExamModel->delete($id);
+        try {
+            $this->conn->beginTransaction();
+            $query = $this->conn->prepare("delete from $this->table where id=:id");
+            $query->execute(['id' => $id]);
+            $this->conn->commit();
+            return true;
+        } catch (Throwable $e) {
+            $this->conn->rollBack();
+            return false;
+        }
     }
     public function update($data, $id)
     {
-        $this->ExamModel->update($data, $id);
+        try {
+            $class = $data['class'];
+            $category = $data['category'];
+            $description = $data['description'];
+            $duration = $data['duration'];
+            $title = $data['title'];
+            $expire_time = $data['expire_time'];
+            // Format expire_time for SQL
+            $exprireTimeFormat = new DateTime($expire_time);
+            $expireTimeFormatted = $exprireTimeFormat->format('Y-m-d H:i:s');
+            $this->conn->beginTransaction();
+            // Prepare the update query
+            $query = $this->conn->prepare("UPDATE $this->table 
+            SET class = :class, 
+                category = :category, 
+                description = :description, 
+                duration = :duration, 
+                title = :title, 
+                expire_time = :expire_time 
+            WHERE id = :id");
+            // Execute the query
+            $query->execute([
+                'class' => $class,
+                'category' => $category,
+                'description' => $description,
+                'duration' => $duration,
+                'title' => $title,
+                'expire_time' => $expireTimeFormatted,
+                'id' => $id
+            ]);
+
+            $this->conn->commit();
+            return true;
+            // echo json_encode(1);
+        } catch (Throwable $e) {
+            $this->conn->rollBack();
+            return false;
+            // throw $e;
+        }
     }
     public function readQuestionExam($id)
     {

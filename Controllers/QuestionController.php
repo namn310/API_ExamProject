@@ -55,24 +55,16 @@ class QuestionsController
     {
         // $checkToken = CheckToken::checkToken();
         // if ($checkToken === true) {
-        $data2 = json_decode(file_get_contents("php://input"), true);
-        // kiểm tra dữ liệu tránh truyền script vào input
-        // foreach ($data2 as $key => $value) {
-        //     $data2[$key] = htmlspecialchars($value, ENT_QUOTES, 'UTF-8');
-        // }
         if ($id == 0) {
             echo json_encode(['message' => 'Dữ liệu bài thi không tồn tại !']);
         } else {
-            // $this->QuestionModel->update($data2, $id);
-            if ($this->QuestionModel->update($data2, $id) == false) {
+            // $this->QuestionModel->updateQuestion($id);
+            if ($this->QuestionModel->updateQuestion($id) == false) {
                 echo json_encode(['message' => 'Cập nhật câu hỏi không thành công !']);
             } else {
                 echo json_encode(['message' => 'Cập nhật thông tin câu hỏi thành công !']);
             }
         }
-        // } else {
-        //     echo json_encode(['message' => "Token không hợp lệ"]);
-        // }
     }
 
     public function delete($id)

@@ -17,12 +17,16 @@ class QuestionModel extends BaseModel
         $query2 = $this->conn->query("select id from category_exams limit 1");
         $category = $query2->fetch()->id;
         // phân trang
-        $page = isset($_GET['page']) ? $_GET['page'] : 1;
-        // nếu có trường category thì lấy còn không thì mặc định lấy category đầu tiên
-        $category = isset($_GET['category']) ? $_GET['category'] : 0;
+        $page = (isset($_GET['page']) && $_GET['page'] !== '' && $_GET['page'] !== 'undefined') ? $_GET['page'] : 1;
+        // nếu có trường category thì lấy còn không thì category = 0
+        $category = (isset($_GET['category']) && $_GET['category'] !== '' && $_GET['category'] !== 'undefined') ? $_GET['category'] : 0;
+        // nếu có trường class thì lấy còn không thì mặc định là 0
+        $classes = (isset($_GET['class']) && $_GET['class'] !== '' && $_GET['class'] !== 'undefined') ? $_GET['class'] : 0;
+        // giới hạn 10 bản ghi một lần
         $limit = 10;
         $offset = ($page - 1) * $limit;
-        if ($category == 0 || $category === ' ') {
+        // nếu danh mục và lớp học bằng 0 thì lấy tất cả câu hỏi
+        if (($category == 0 && $classes == 0)) {
             // lấy tổng số bản ghi trong table
             $count_query = $this->conn->prepare("SELECT COUNT(*) as total from $this->table");
             $count_query->execute();
@@ -32,8 +36,14 @@ class QuestionModel extends BaseModel
             $page_total = ceil($record_total / $limit);
             // lấy danh sách có phân trang
             // nếu trường category không được chọn thì lấy tất
-            $query = $this->conn->prepare("select * from $this->table LIMIT :limit OFFSET :offset");
-            // $query = $this->conn->prepare("select * from $this->table");
+            $query = $this->conn->prepare("SELECT 
+            q.id,c.class,q.Subject,q.image,q.title,q.correctAns,q.created_by,q.answerlist
+            FROM $this->table q
+            INNER JOIN classes c
+            ON q.class = c.id
+            ORDER BY q.id DESC
+            LIMIT :limit
+            OFFSET :offset");
             // gán các giá trị nguyên cho limit và offset
             $query->bindParam(':limit', $limit, PDO::PARAM_INT);
             $query->bindParam(':offset', $offset, PDO::PARAM_INT);
@@ -41,7 +51,9 @@ class QuestionModel extends BaseModel
             $query->execute();
             return ['data' => $query->fetchAll(), 'limit' => $limit, 'current_page' => $page, 'total_page' => $page_total, 'record_total' => $record_total, 'catIf' => $category];
             // return $query->fetchAll();
-        } else {
+        }
+        // nếu class = 0 thì và category khác 0 thì lấy theo danh mục
+        elseif ($classes == 0 && $category !== 0) {
             // lấy tổng số bản ghi trong table
             $count_query = $this->conn->prepare("SELECT COUNT(*) as total from $this->table where Subject=:category");
             $count_query->execute(['category' => $category]);
@@ -51,10 +63,75 @@ class QuestionModel extends BaseModel
             $page_total = ceil($record_total / $limit);
             // lấy danh sách có phân trang
             // nếu trường category không được chọn thì lấy tất
-            $query = $this->conn->prepare("select * from $this->table where Subject=:category LIMIT :limit OFFSET :offset");
-            // $query = $this->conn->prepare("select * from $this->table");
+            $query = $this->conn->prepare("SELECT 
+            q.id,c.class,q.Subject,q.image,q.title,q.correctAns,q.created_by,q.answerlist
+            FROM $this->table q
+            INNER JOIN classes c
+            ON q.class = c.id
+            WHERE q.Subject=:category
+            ORDER BY q.id DESC
+            LIMIT :limit
+            OFFSET :offset");
             // gán các giá trị nguyên cho limit và offset
             $query->bindParam(':category', $category, PDO::PARAM_INT);
+            $query->bindParam(':limit', $limit, PDO::PARAM_INT);
+            $query->bindParam(':offset', $offset, PDO::PARAM_INT);
+            // $query->execute([':limit' => (int)$limit, ':offset' => (int)$offset]);
+            $query->execute();
+            return ['data' => $query->fetchAll(), 'limit' => $limit, 'current_page' => $page, 'total_page' => $page_total, 'record_total' => $record_total, 'cat' => $category];
+        }
+        // nếu class khác 0 còn category bằng 0 thì lấy theo lớp
+        elseif ($classes !== 0 && $category == 0) {
+            // lấy tổng số bản ghi trong table
+            $count_query = $this->conn->prepare("SELECT COUNT(*) as total from $this->table where class=:class");
+            $count_query->execute(['class' => $classes]);
+            $record_total = $count_query->fetch(PDO::FETCH_ASSOC)['total'];
+            // tổng số trang
+            // ceil hàm lấy phần nguyên
+            $page_total = ceil($record_total / $limit);
+            // lấy danh sách có phân trang
+            // nếu trường category không được chọn thì lấy tất
+            $query = $this->conn->prepare("SELECT 
+            q.id,c.class,q.Subject,q.image,q.title,q.correctAns,q.created_by,q.answerlist
+            FROM $this->table q
+            INNER JOIN classes c
+            ON q.class = c.id
+            WHERE q.class=:class
+            ORDER BY q.id DESC
+            LIMIT :limit
+            OFFSET :offset");
+            // gán các giá trị nguyên cho limit và offset
+            $query->bindParam(':class', $classes, PDO::PARAM_INT);
+            $query->bindParam(':limit', $limit, PDO::PARAM_INT);
+            $query->bindParam(':offset', $offset, PDO::PARAM_INT);
+            // $query->execute([':limit' => (int)$limit, ':offset' => (int)$offset]);
+            $query->execute();
+            return ['data' => $query->fetchAll(), 'limit' => $limit, 'current_page' => $page, 'total_page' => $page_total, 'record_total' => $record_total, 'cat' => $category];
+        }
+        // nếu không thì lấy theo cả danh mục và lớp học
+        else {
+            // lấy tổng số bản ghi trong table
+            $count_query = $this->conn->prepare("SELECT COUNT(*) as total from $this->table where class=:class and Subject=:category ");
+            $count_query->execute(['class' => $classes, 'category' => $category]);
+            $record_total = $count_query->fetch(PDO::FETCH_ASSOC)['total'];
+            // tổng số trang
+            // ceil hàm lấy phần nguyên
+            $page_total = ceil($record_total / $limit);
+            // lấy danh sách có phân trang
+            // nếu trường category không được chọn thì lấy tất
+            $query = $this->conn->prepare("SELECT 
+            q.id,c.class,q.Subject,q.image,q.title,q.correctAns,q.created_by,q.answerlist
+            FROM $this->table q
+            INNER JOIN classes c
+            ON q.class = c.id
+            WHERE q.class=:class
+            and Subject=:category
+            ORDER BY q.id DESC
+            LIMIT :limit
+            OFFSET :offset");
+            // gán các giá trị nguyên cho limit và offset
+            $query->bindParam(':category', $category, PDO::PARAM_INT);
+            $query->bindParam(':class', $classes, PDO::PARAM_INT);
             $query->bindParam(':limit', $limit, PDO::PARAM_INT);
             $query->bindParam(':offset', $offset, PDO::PARAM_INT);
             // $query->execute([':limit' => (int)$limit, ':offset' => (int)$offset]);
@@ -217,12 +294,18 @@ class QuestionModel extends BaseModel
             return false;
         }
     }
-    public function update($data2, $id)
+    public function updateQuestion($id)
     {
         $data = [];
         foreach ($_POST as $key => $value) {
             // Thêm từng giá trị vào mảng $data với định dạng key => value
             $data[$key] = $value;
+        }
+        // xóa bỏ các phần tử có key là answerImage trong mảng 
+        foreach ($data as $key => $value) {
+            if (strpos($key, 'answerImage_') !== false) {
+                unset($data[$key]);
+            }
         }
         $numberAnswer = json_decode($_POST['answerlist'], true);
         // link file ảnh câu hỏi
@@ -244,11 +327,11 @@ class QuestionModel extends BaseModel
                 exit;
             }
         } else {
-            if (!empty($data['image'])) {
-                $data['image'] = $data['image'];
-            } else {
-                $data['image'] = '';
-            }
+            // if (!empty($data['image'])) {
+            //     $data['image'] = $data['image'];
+            // } else {
+            $data['image'] = '';
+            // }
         }
         $string = "";
         $columns = implode(",", array_keys($data));
@@ -336,12 +419,14 @@ class QuestionModel extends BaseModel
                 }
             }
             $this->conn->commit();
+            return true;
         } catch (Throwable $e) {
             $this->conn->rollBack();
             return false;
-            // echo json_encode($e);
+            // throw $e;
+            // echo json_encode($arrayData);
         }
-        return true;
+
         // echo json_encode(2);
     }
     public function getUserCreate()

@@ -2,21 +2,21 @@
 include_once __DIR__ . '/../Models/BaseModel.php';
 include_once __DIR__ . "/../Connection/Connection.php";
 require 'vendor/autoload.php';
-class CategoryExamModel extends BaseModel
+class ClassModel extends BaseModel
 {
     protected $table;
-    protected $CategoryExamModel;
+    protected $ClassModel;
     public function __construct()
     {
-        $this->table = 'category_exams';
-        $this->CategoryExamModel = new BaseModel($this->table);
+        $this->table = 'classes';
+        $this->ClassModel = new BaseModel($this->table);
         $this->conn = ConnectionDB::GetConnect();
     }
     public function index()
     {
-        return $this->CategoryExamModel->index();
+        return $this->ClassModel->index();
     }
-    public function getAllCategoryModel()
+    public function getAllClassModel()
     {
         try {
             $query = $this->conn->query("select * from $this->table ");
@@ -25,7 +25,7 @@ class CategoryExamModel extends BaseModel
             return null;
         }
     }
-    public function create($data)
+    public function createClassModel($data)
     {
         // kiểm tra dữ liệu tránh truyền script vào input
         foreach ($data as $key => $value) {
@@ -45,7 +45,7 @@ class CategoryExamModel extends BaseModel
             $query->execute($data);
             $lastInsertId = $this->conn->lastInsertId();
             $this->conn->commit();
-            echo json_encode(['status' => 'success', 'id' => $lastInsertId, 'title' => $data['title'], 'description' => $data['description']]);
+            echo json_encode(['status' => 'success', 'id' => $lastInsertId, 'class' => $data['class'], 'description' => $data['description']]);
         } catch (Throwable $e) {
             // nếu có lỗi thì hoàn tác lại query trên
             $this->conn->rollBack();
@@ -54,45 +54,34 @@ class CategoryExamModel extends BaseModel
             // throw $e;
         }
     }
-    public function read($id)
+    public function deleteClassModel($id)
     {
-        return $this->CategoryExamModel->read($id);
+        return $this->ClassModel->delete($id);
     }
-    public function delete($id)
-    {
-        return $this->CategoryExamModel->delete($id);
-    }
-    public function deleteCategoryModel($id)
+    public function updateClassModel($data, $id)
     {
         try {
+            $string = "";
+            $columns = implode(",", array_keys($data));
+            $columns_set_name = explode(',', $columns);
+            foreach ($columns_set_name as $row) {
+                $string .= $row . '=:' . $row . ',';
+            }
+            $setClause = rtrim($string, ",");
+            // ví dụ chuỗi string sẽ có dạng name=:name,....
+            // echo $setClause;
             $this->conn->beginTransaction();
-            $query = $this->conn->prepare("delete from category_exams where id=:id");
-            $query->execute(['id' => $id]);
+            $query = $this->conn->prepare("update $this->table set $setClause where id=:id");
+            $arrayId = ['id' => $id];
+            //merge mảng để execute query
+            $arrayData = array_merge($data, $arrayId);
+            $query->execute($arrayData);
+            $lastInsertId = $this->conn->lastInsertId();
             $this->conn->commit();
-            return true;
+            echo json_encode(['status' => 'success', 'id' => $lastInsertId, 'class' => $data['class'], 'description' => $data['description']]);
         } catch (Throwable $e) {
             $this->conn->rollBack();
-            return false;
+            echo json_encode(['status' => 'error']);
         }
     }
-    public function update($data, $id)
-    {
-        $this->CategoryExamModel->update($data, $id);
-    }
-    public function readQuestionCategory($id)
-    {
-        try {
-            $query = $this->conn->prepare("SELECT exams.id, exams.title, exams.duration,exams.totalQuestion FROM exams
-                INNER JOIN category_exams on exams.category = category_exams.id
-                WHERE category_exams.id=:id");
-            $query->execute(['id' => $id]);
-        } catch (Throwable $e) {
-            return null;
-        }
-        return $query->fetchAll();
-    }
-    // public function getUserCreate()
-    // {
-    //     $this->CategoryExamModel->getUserCreate();
-    // }
 }
