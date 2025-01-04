@@ -208,6 +208,10 @@ $routers = [
         '/users/update/(\d+)' => function ($id) use ($UserController) {
             $UserController->update($id);
         },
+        //cập nhật email người dùng
+        '/users/updateEmail/(\d+)' => function ($id) use ($UserController) {
+            $UserController->updateEmailController($id);
+        },
         // đổi mật khẩu người dùng
         '/users/reset-password' => function () use ($UserController) {
             $UserController->resetPassword();
@@ -259,9 +263,17 @@ $routers = [
         '/result/create' => function () use ($ResultController) {
             $ResultController->create();
         },
+        // gửi mã OTP để xác nhận tạo tài khoản
+        '/users/sendOTP' => function () use ($UserController) {
+            $UserController->sendOTPToRegister();
+        },
         // tạo mới tài khoản
         '/users/create' => function () use ($UserController) {
             $UserController->create();
+        },
+        // active người dùng nếu tài khoản đăng ký chưa được active
+        '/users/activeAccount' => function () use ($UserController) {
+            $UserController->activeAccountController();
         },
         //login Google
         '/users/loginGoogle' => function () use ($UserController) {

@@ -28,16 +28,17 @@ class ResultModel extends BaseModel
         $limit = 10;
         $offset = ($page - 1) * $limit;
         // lấy tổng số bản ghi trong table
-        $count_query = $this->conn->prepare("SELECT COUNT(*) as total from results");
-        $count_query->execute();
+        $count_query = $this->conn->prepare("SELECT COUNT(*) as total from results where id_user=:idUser");
+        $count_query->execute(['idUser' => $id]);
         $record_total = $count_query->fetch(PDO::FETCH_ASSOC)['total'];
         // tổng số trang
         // ceil hàm lấy phần nguyên
         $page_total = ceil($record_total / $limit);
         // lấy danh sách có phân trang
-        $query = $this->conn->prepare("select * from $this->table LIMIT :limit OFFSET :offset");
+        $query = $this->conn->prepare("select * from $this->table where id_user=:idUser LIMIT :limit OFFSET :offset");
         // $query = $this->conn->prepare("select * from $this->table");
         // gán các giá trị nguyên cho limit và offset
+        $query->bindParam(':idUser', $id, PDO::PARAM_INT);
         $query->bindParam(':limit', $limit, PDO::PARAM_INT);
         $query->bindParam(':offset', $offset, PDO::PARAM_INT);
         // $query->execute([':limit' => (int)$limit, ':offset' => (int)$offset]);
@@ -162,15 +163,6 @@ class ResultModel extends BaseModel
             $data['incorrect_question'] = $incorrect_question;
             $data['score'] = $scorePerQuestion * $correct_question;
             $data['correct_question'] = $correct_question;
-            // echo json_encode([
-            //     $answer,
-            //     $listCorrectAnswer,
-            //     $listQuestionInExam,
-            //     $correct_question,
-            //     $incorrect_question,
-            //     $data['score'],
-            //     $scorePerQuestion
-            // ]);
             $columns = implode(",", array_keys($data));
             // prepare giá trị truyền vào sql
             // lấy giá trị từ data

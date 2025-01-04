@@ -22,16 +22,196 @@ class UserModel extends BaseModel
     }
     public function index()
     {
-
-        $query = $this->conn->query("select id,name,email,create_at from $this->table");
-        return $query->fetchAll();
+        // phân trang
+        $page = (isset($_GET['page']) && $_GET['page'] !== '' && $_GET['page'] !== 'undefined') ? $_GET['page'] : 1;
+        $role = (isset($_GET['role']) && $_GET['role'] !== '' && $_GET['role'] !== 'undefined') ? $_GET['role'] : 1;
+        $limit = 10;
+        $offset = ($page - 1) * $limit;
+        if ($role !== 'admin' && $role !== 'student' && $role !== 'teacher') {
+            // lấy tổng số bản ghi trong table
+            $count_query = $this->conn->prepare("SELECT COUNT(*) as total from $this->table");
+            $count_query->execute();
+            $record_total = $count_query->fetch(PDO::FETCH_ASSOC)['total'];
+            // tổng số trang
+            // ceil hàm lấy phần nguyên
+            $page_total = ceil($record_total / $limit);
+            // lấy danh sách có phân trang
+            // nếu trường category không được chọn thì lấy tất
+            $query = $this->conn->prepare("select id,name,email,role,create_at from $this->table LIMIT :limit OFFSET :offset");
+            // gán các giá trị nguyên cho limit và offset
+            $query->bindParam(':limit', $limit, PDO::PARAM_INT);
+            $query->bindParam(':offset', $offset, PDO::PARAM_INT);
+            // $query->execute([':limit' => (int)$limit, ':offset' => (int)$offset]);
+            $query->execute();
+            return ['data' => $query->fetchAll(), 'limit' => $limit, 'current_page' => $page, 'total_page' => $page_total, 'record_total' => $record_total];
+            // return $query->fetchAll();
+        } else {
+            // lấy tổng số bản ghi trong table
+            $count_query = $this->conn->prepare("SELECT COUNT(*) as total from $this->table where role=:role");
+            $count_query->execute(['role' => $role]);
+            $record_total = $count_query->fetch(PDO::FETCH_ASSOC)['total'];
+            // tổng số trang
+            // ceil hàm lấy phần nguyên
+            $page_total = ceil($record_total / $limit);
+            // lấy danh sách có phân trang
+            // nếu trường category không được chọn thì lấy tất
+            $query = $this->conn->prepare("select id,name,email,role,create_at from $this->table where role=:role LIMIT :limit OFFSET :offset");
+            // gán các giá trị nguyên cho limit và offset
+            $query->bindParam(':role', $role);
+            $query->bindParam(':limit', $limit, PDO::PARAM_INT);
+            $query->bindParam(':offset', $offset, PDO::PARAM_INT);
+            // $query->execute([':limit' => (int)$limit, ':offset' => (int)$offset]);
+            $query->execute();
+            return ['data' => $query->fetchAll(), 'limit' => $limit, 'current_page' => $page, 'total_page' => $page_total, 'record_total' => $record_total];
+            // return $query->fetchAll();
+        }
     }
+    public function sendOTPToRegisterModel($data)
+    {
+        date_default_timezone_set("Asia/Ho_Chi_Minh");
+        $email = rtrim($data['email']);
+        $token = $data['tk'];
+        $roleAccount = $data['role'];
+        $typeToken = $data['type_token'];
+        $mail = new PHPMailer(true);
+        $mail->isSMTP();
+        $mail->Host = getenv('MAIL_HOST');
+        $mail->SMTPAuth = true;
+        $mail->Username = getenv('MAIL_USERNAME');
+        $mail->Password = getenv('MAIL_PASSWORD');
+        $mail->SMTPSecure = getenv('MAIL_ENCRYPTION');
+        $mail->Port = getenv('MAIL_PORT');
+        $mail->setFrom(getenv('MAIL_USERNAME'), 'ExamTutor');
+        $mail->addAddress($email);
+        $mail->isHTML(true);
+        $mail->Subject = 'ResetPass';
+        // $resetLinkGmail = $resetLink . '?token=' . urlencode($token);
+        $OTP = $this->generateOTP();
+        // nếu muốn dùng html trong Body thì dùng EOD
+        $mail->Body =
+            <<<EOD
+                    <!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Đặt lại mật khẩu của bạn</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            color: #333;
+            background-color: #f9f9f9;
+            padding: 20px;
+        }
+
+        .email-container {
+            max-width: 600px;
+            margin: 0 auto;
+            background-color: #fff;
+            padding: 20px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+        }
+
+        .button {
+            display: inline-block;
+            padding: 10px 20px;
+            color: #fff;
+            background-color: green;
+            text-decoration: none;
+            border-radius: 5px;
+        }
+
+        .footer {
+            margin-top: 20px;
+            font-size: 12px;
+            color: #888;
+        }
+
+        .a {
+            text-decoration: none;
+            color: #fff;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="email-container">
+        <h2>Xin chào,</h2>
+        <p>Đây là mã OTP xác nhận đăng ký tài khoản của bạn</p>
+
+        <p style="text-align: center;font-size:30px">
+            <strong>$OTP</strong>
+        </p>
+
+        <p>
+            Lưu ý: Mã OTP này sẽ hết hạn sau <strong>30 phút</strong> để đảm bảo an toàn và <strong>tuyệt đối không chia
+                sẻ mã này cho người khác</strong>. Nếu bạn không yêu cầu đặt lại mật khẩu, vui lòng bỏ qua email này,
+            tài khoản của bạn sẽ không bị ảnh hưởng.
+        </p>
+
+        <div class="footer">
+            <p>Trân trọng,</p>
+            <p>Đội ngũ hỗ trợ khách hàng - ExamTutor</p>
+        </div>
+
+        <hr>
+    </div>
+</body>
+
+</html>
+EOD;
+        // echo json_encode($mail->Body);
+        try {
+            // kiểm tra xem thể loại token là gì
+            //  - nếu là token đăng ký thì vào TH1
+            //  - nếu là token để active account thì vào TH2
+
+            // TH2
+            if ($typeToken === 'activeAccount') {
+                $mail->send();
+                $now = new DateTime();
+                $CurrentDateTime = $now->format('Y-m-d H:i:s');
+                $this->conn->beginTransaction();
+                $query2 = $this->conn->prepare("insert into token_confirm_regist_and_change_pass (email,token,OTP,role_account,type_token,created_at) values (:email,:token,:OTP,:role,:type,:create)");
+                $query2->execute(['email' => $email, 'token' => $token, 'OTP' => $OTP, 'role' => $roleAccount, 'type' => $typeToken, 'create' => $CurrentDateTime]);
+                $this->conn->commit();
+                echo json_encode(['message' => 'Mã OTP đã được gửi']);
+            } else {
+                // TH1
+                // kiểm tra xem email người dùng nhập đã tồn tại trong hệ thống hay chưa
+                $query = $this->conn->prepare("select id,email from users where email=:email and role=:role");
+                $query->execute(['email' => $email, 'role' => $roleAccount]);
+                if ($query->rowCount() > 0) {
+                    echo json_encode(['message' => 'Email đã tồn tại !']);
+                } else {
+                    $mail->send();
+                    $now = new DateTime();
+                    $CurrentDateTime = $now->format('Y-m-d H:i:s');
+                    $this->conn->beginTransaction();
+                    $query2 = $this->conn->prepare("insert into token_confirm_regist_and_change_pass (email,token,OTP,role_account,type_token,created_at) values (:email,:token,:OTP,:role,:type,:create)");
+                    $query2->execute(['email' => $email, 'token' => $token, 'OTP' => $OTP, 'role' => $roleAccount, 'type' => $typeToken, 'create' => $CurrentDateTime]);
+                    $this->conn->commit();
+                    echo json_encode(['message' => 'Mã OTP đã được gửi']);
+                }
+            }
+        } catch (Exception $e) {
+            $this->conn->rollBack();
+            echo json_encode(['message' => 'Không thể gửi email. Lỗi: ' . $mail->ErrorInfo]);
+        }
+    }
+    // đăng ký tài khoản
     public function createUser($data)
     {
+        date_default_timezone_set("Asia/Ho_Chi_Minh");
         $name = $data['name'];
         $email = $data['email'];
         $pass = md5($data['password']);
         $role = $data['role'];
+        $OTP = $data['OTP'];
+        $token = $data['token'];
         try {
             $this->conn->beginTransaction();
             $query = $this->conn->prepare("select id from $this->table where email=:email");
@@ -39,14 +219,100 @@ class UserModel extends BaseModel
             if ($query->rowCount() > 0) {
                 echo json_encode(['message' => 'Email đã tồn tại']);
             } else {
-                $query2 = $this->conn->prepare("insert into $this->table (name,password,email,role) values (:name,:pass,:email,:role)");
-                $query2->execute(['name' => $name, 'pass' => $pass, 'email' => $email, 'role' => $role]);
-                echo json_encode(['message' => 'Đăng ký tài khoản thành công']);
+                // kiểm tra token và OTP 
+                $now = new DateTime();
+                $CurrentDateTime = $now->format('Y-m-d H:i:s');
+                $query3 = $this->conn->prepare("select * from token_confirm_regist_and_change_pass where email=:email and token=:token and OTP=:OTP order by id desc limit 1");
+                $query3->execute(['email' => $email, 'token' => $token, 'OTP' => $OTP]);
+                // nếu tồn tại thì thêm người dùng mới
+                if ($query3->rowCount() > 0) {
+                    $query2 = $this->conn->prepare("insert into $this->table (name,password,email,role,active) values (:name,:pass,:email,:role,:active)");
+                    $query2->execute(['name' => $name, 'pass' => $pass, 'email' => $email, 'role' => $role, 'active' => 1]);
+                    // xóa token của email này
+                    $query4 = $this->conn->prepare("delete from token_confirm_regist_and_change_pass where email =:email ");
+                    $query4->execute(['email' => $email]);
+                    // xóa token đã quá hạn 
+                    $query5 = $this->conn->query("select created_at,id from token_confirm_regist_and_change_pass");
+                    if ($query5->rowCount() > 1) {
+                        foreach ($query5->fetchAll() as $row) {
+                            $id = $row['id'];
+                            $TimeCreatedToTimeStamp = (new DateTime($query5['created_at']))->getTimestamp();
+                            $diffInSecond = ($now->getTimestamp() - $TimeCreatedToTimeStamp);
+                            // nếu diffInSecond lớn hơn 1800 thì đã hết hạn tiến hành xóa
+                            if ($diffInSecond > 1800) {
+                                $query6 = $this->conn->prepare("delete from token_confirm_regist_and_change_pass where id=:id ");
+                                $query6->execute(['id' => $id]);
+                            }
+                        }
+                    }
+                    $this->conn->commit();
+                    echo json_encode(['message' => 'Đăng ký tài khoản thành công']);
+                }
+                // còn không thì là OTP sai
+                else {
+                    echo json_encode(['message' => 'Mã OTP không hợp lệ']);
+                }
             }
-            $this->conn->commit();
         } catch (Throwable $e) {
             $this->conn->rollBack();
             echo json_encode(['message' => $e]);
+        }
+    }
+    //active tài khoản người dùng
+    public function activeAccountModel($data)
+    {
+        $email = $data['email'];
+        $role = $data['role'];
+        $OTP = $data['OTP'];
+        $token = $data['token'];
+        $type_token = $data['type_token'];
+        try {
+            $this->conn->beginTransaction();
+            $query = $this->conn->prepare("select id from $this->table where email=:email and active =:active and role=:role limit 1");
+            $query->execute(['email' => $email, 'active' => 0, 'role' => $role]);
+            if ($query->rowCount() > 0) {
+                // kiểm tra token và OTP 
+                $account = $query->fetch(PDO::FETCH_ASSOC);
+                $idAccount = $account['id'];
+                $now = new DateTime();
+                $CurrentDateTime = $now->format('Y-m-d H:i:s');
+                $query3 = $this->conn->prepare("select * from token_confirm_regist_and_change_pass where email=:email and token=:token and OTP=:OTP and type_token=:typeToken order by id desc limit 1");
+                $query3->execute(['email' => $email, 'token' => $token, 'OTP' => $OTP, 'typeToken' => $type_token]);
+                // nếu tồn tại thì thêm người dùng mới
+                if ($query3->rowCount() > 0) {
+                    $query2 = $this->conn->prepare("update users set active=:active where id=:id");
+                    $query2->execute(['id' => $idAccount, 'active' => 1]);
+                    // xóa token của email này
+                    $query4 = $this->conn->prepare("delete from token_confirm_regist_and_change_pass where email =:email ");
+                    $query4->execute(['email' => $email]);
+                    // xóa token đã quá hạn 
+                    $query5 = $this->conn->query("select created_at,id from token_confirm_regist_and_change_pass");
+                    if ($query5->rowCount() > 1) {
+                        foreach ($query5->fetchAll() as $row) {
+                            $id = $row['id'];
+                            $TimeCreatedToTimeStamp = (new DateTime($query5['created_at']))->getTimestamp();
+                            $diffInSecond = ($now->getTimestamp() - $TimeCreatedToTimeStamp);
+                            // nếu diffInSecond lớn hơn 1800 thì đã hết hạn tiến hành xóa
+                            if ($diffInSecond > 1800) {
+                                $query6 = $this->conn->prepare("delete from token_confirm_regist_and_change_pass where id=:id ");
+                                $query6->execute(['id' => $id]);
+                            }
+                        }
+                    }
+                    $this->conn->commit();
+                    echo json_encode(['message' => 'Xác thực tài khoản thành công']);
+                }
+                // còn không thì là OTP sai
+                else {
+                    echo json_encode(['message' => 'Mã OTP không hợp lệ']);
+                }
+            } else {
+                echo json_encode(['message' => 'Email không tồn tại']);
+            }
+        } catch (Throwable $e) {
+            $this->conn->rollBack();
+            echo json_encode(['message' => $e]);
+            // throw $e;
         }
     }
     public function read($id)
@@ -62,6 +328,37 @@ class UserModel extends BaseModel
     public function update($data, $id)
     {
         $this->UserModel->update($data, $id);
+    }
+    public function updateEmailModel($data, $id)
+    {
+        $pass = md5($data['password']);
+        $email = $data['email'];
+        try {
+            $this->conn->beginTransaction();
+            // kiểm tra xem mật khẩu có đúng không
+            $query2 = $this->conn->prepare("select id,password from users where id=:id and password=:pass");
+            $query2->execute(['id' => $id, 'pass' => $pass]);
+            if ($query2->rowCount() > 0) {
+                $query1 = $this->conn->prepare("select email from users where email=:email");
+                $query1->execute(['email' => $email]);
+                if ($query1->rowCount() > 0) {
+                    echo json_encode(['message' => 'Email đã tồn tại']);
+                } else {
+
+                    $query = $this->conn->prepare("update users set email=:email where id=:id");
+                    $query->execute(['email' => $email, 'id' => $id]);
+                    $this->conn->commit();
+                    echo json_encode(['message' => 'Cập nhật thành công !']);
+                }
+            } else {
+                // $this->conn->commit();
+                echo json_encode(['message' => 'Mật khẩu không chính xác !']);
+            }
+        } catch (Throwable $e) {
+            $this->conn->rollBack();
+            echo json_encode(['message' => 'Có lỗi xảy ra']);
+            // throw $e;
+        }
     }
     public function updatePassAdmin($data, $id)
     {
@@ -99,8 +396,6 @@ class UserModel extends BaseModel
     public function LoginModel($data)
     {
         $key = getenv('KEY');
-        // $data = json_decode(file_get_contents("php://input"), true);
-
         try {
             $email = $data['email'];
             $pass = md5($data['password']);
@@ -109,43 +404,84 @@ class UserModel extends BaseModel
             $query->execute(['email' => $email, 'password' => $pass, 'role' => $role]);
             $user = $query->fetch(PDO::FETCH_ASSOC);
             if ($query->rowCount() > 0) {
+                $CheckActive = $user['active'];
                 $timeCreate = time();
                 $timeExpire = time() + 86400;
                 if ($role === 'admin') {
-                    $payload = [
-                        'iat' => $timeCreate,
-                        'exp' => $timeExpire,
-                        'data' => [
-                            'id' => $user['id'],
-                            'email' => $user['email'],
-                            'name' => $user['name'],
-                            'role' => $user['role'],
-                            'type_account' => 'account'
-                        ]
-                    ];
-                    $jwt = JWT::encode($payload, $key, 'HS256');
-                    echo json_encode([
-                        'message' => 'Đăng nhập thành công !',
-                        'jwtAdmin' => $jwt,
-                    ]);
+                    // kiểm tra xem tài khoản đã được active hay chưa
+                    if ($CheckActive > 0) {
+                        $payload = [
+                            'iat' => $timeCreate,
+                            'exp' => $timeExpire,
+                            'data' => [
+                                'id' => $user['id'],
+                                'email' => $user['email'],
+                                'name' => $user['name'],
+                                'role' => $user['role'],
+                                'type_account' => 'account'
+                            ]
+                        ];
+                        $jwt = JWT::encode($payload, $key, 'HS256');
+                        echo json_encode([
+                            'message' => 'Đăng nhập thành công !',
+                            'jwtAdmin' => $jwt,
+                        ]);
+                    } else {
+                        echo json_encode([
+                            'message' => 'Tài khoản chưa được kích hoạt ! Vui lòng kích hoạt tài khoản',
+                            'jwtAdmin' => null,
+                        ]);
+                    }
                 }
                 if ($role === 'student') {
-                    $payload = [
-                        'iat' => $timeCreate,
-                        'exp' => $timeExpire,
-                        'data' => [
-                            'id' => $user['id'],
-                            'email' => $user['email'],
-                            'name' => $user['name'],
-                            'role' => $user['role'],
-                            'type_account' => 'account'
-                        ]
-                    ];
-                    $jwt = JWT::encode($payload, $key, 'HS256');
-                    echo json_encode([
-                        'message' => 'Đăng nhập thành công !',
-                        'jwtStudent' => $jwt,
-                    ]);
+                    if ($CheckActive > 0) {
+                        $payload = [
+                            'iat' => $timeCreate,
+                            'exp' => $timeExpire,
+                            'data' => [
+                                'id' => $user['id'],
+                                'email' => $user['email'],
+                                'name' => $user['name'],
+                                'role' => $user['role'],
+                                'type_account' => 'account'
+                            ]
+                        ];
+                        $jwt = JWT::encode($payload, $key, 'HS256');
+                        echo json_encode([
+                            'message' => 'Đăng nhập thành công !',
+                            'jwtStudent' => $jwt,
+                        ]);
+                    } else {
+                        echo json_encode([
+                            'message' => 'Tài khoản chưa được kích hoạt ! Vui lòng kích hoạt tài khoản',
+                            'jwtStudent' => null,
+                        ]);
+                    }
+                }
+                if ($role === 'teacher') {
+                    if ($CheckActive > 0) {
+                        $payload = [
+                            'iat' => $timeCreate,
+                            'exp' => $timeExpire,
+                            'data' => [
+                                'id' => $user['id'],
+                                'email' => $user['email'],
+                                'name' => $user['name'],
+                                'role' => $user['role'],
+                                'type_account' => 'account'
+                            ]
+                        ];
+                        $jwt = JWT::encode($payload, $key, 'HS256');
+                        echo json_encode([
+                            'message' => 'Đăng nhập thành công !',
+                            'jwtAdmin' => $jwt,
+                        ]);
+                    } else {
+                        echo json_encode([
+                            'message' => 'Tài khoản chưa được kích hoạt ! Vui lòng kích hoạt tài khoản',
+                            'jwtAdmin' => null,
+                        ]);
+                    }
                 }
             } else {
                 echo json_encode(['message' => 'Đăng nhập thất bại ! Tài khoản hoặc mật khẩu không chính xác']);
@@ -188,7 +524,7 @@ class UserModel extends BaseModel
                 // nếu chưa có thì tạo mới vào bảng users
                 else {
                     $this->conn->beginTransaction();
-                    $query2 = $this->conn->prepare("insert into users (name,password,email,role,type_account,id_account_social) values (:name,:password,:email,:role,:type_account,:id_account_social)");
+                    $query2 = $this->conn->prepare("insert into users (name,password,email,role,type_account,id_account_social,active) values (:name,:password,:email,:role,:type_account,:id_account_social,:active)");
                     $hashPassword = hash("sha256", `$userEmail` . `$userName`);
                     $query2->execute([
                         'name' => $userName,
@@ -197,6 +533,7 @@ class UserModel extends BaseModel
                         'role' => $role,
                         'type_account' => 'google',
                         'id_account_social' => $userId,
+                        'active' => 1
                     ]);
                     $this->conn->commit();
                     $id = $this->conn->lastInsertId();
@@ -240,13 +577,6 @@ class UserModel extends BaseModel
                         'jwtAdmin' => $jwt,
                     ]);
                 }
-                // echo json_encode([
-                //     'success' => true,
-                //     'message' => 'Authentication successful',
-                //     'user_id' => $userId,
-                //     'user_email' => $userEmail,
-                //     'user_name' => $userName
-                // ]);
             } else {
                 echo json_encode(['success' => false, 'message' => 'Invalid token']);
             }
@@ -258,7 +588,6 @@ class UserModel extends BaseModel
     public function resetPasswordModel($data)
     {
         $key = getenv('KEY');
-
         $token = $data['token'];
         $newPassword = md5($data['new_password']);
         $oldPasswordInput = md5($data['old_password']);
@@ -413,6 +742,7 @@ EOD;
             $query = $this->conn->prepare("insert into token_forgot_password (token,time_create,OTP) values (:token,:date,:OTP)");
             $query->execute(['token' => $token, 'date' => $CurrentDateTime, 'OTP' => $OTP]);
             $this->conn->commit();
+            echo json_encode(['message' => 'Mã OTP đã được gửi']);
         } catch (Exception $e) {
             $this->conn->rollBack();
             echo json_encode(['message' => 'Không thể gửi email. Lỗi: ' . $mail->ErrorInfo]);

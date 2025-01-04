@@ -20,7 +20,7 @@ class ChatModel extends BaseModel
             if ($query->rowCount() > 0) {
                 foreach ($result as $row) {
                     $id = $row->id_user;
-                    $query2 = $this->conn->prepare("select id,message,status,create_at,type_sender from messages where id_sender=:id_sender or id_receiver=:id_sender order by id asc ");
+                    $query2 = $this->conn->prepare("select * from messages where id_sender=:id_sender or id_receiver=:id_sender order by id asc ");
                     $query2->execute(['id_sender' => $id]);
                     if ($query2->rowCount() > 0) {
                         $row->list_message = $query2->fetchAll();
@@ -35,7 +35,7 @@ class ChatModel extends BaseModel
     public function getListChatByUserId($id)
     {
         try {
-            $query = $this->conn->prepare("select id,message,status,create_at,type_sender from messages where id_sender=:id or id_receiver=:id order by id asc ");
+            $query = $this->conn->prepare("select * from messages where id_sender=:id or id_receiver=:id order by id asc ");
             $query->execute(['id' => $id]);
             $result = $query->fetchAll();
         } catch (Throwable $e) {

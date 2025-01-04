@@ -45,7 +45,8 @@ class ConnectionDB
             try {
                 self::$conn = new PDO("$dbConnection:host=$dbHost;dbname=$dbName", $dbUser, $dbPass);
                 self::$conn->setAttribute(PDO::ATTR_DEFAULT_FETCH_MODE, PDO::FETCH_OBJ);
-                self::$conn->exec("set names utf8");
+                self::$conn->exec("set names utf8mb4");
+                // self::$conn->exec("SET NAMES utf8mb4 COLLATE utf8mb4_unicode_ci");
             } catch (Throwable $e) {
                 // Xử lý lỗi kết nối
                 echo json_encode("Error in connect database: " . $e->getMessage());

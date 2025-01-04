@@ -31,69 +31,123 @@ class Chat implements MessageComponentInterface
         $this->clients->attach($conn);
         echo "New connection! ({$conn->resourceId})\n";
     }
-
+    private function getImageExtension($data)
+    {
+        $finfo = finfo_open();
+        $mimeType = finfo_buffer($finfo, $data, FILEINFO_MIME_TYPE);
+        finfo_close($finfo);
+        switch ($mimeType) {
+            case 'image/jpeg':
+                return 'jpg';
+            case 'image/png':
+                return 'png';
+            case 'image/gif':
+                return 'gif';
+            default:
+                return 'unknown';
+        }
+    }
     public function onMessage(ConnectionInterface $from, $msg)
     {
         try {
-            $this->conn->beginTransaction();
             // lưu tin nhắn vào database
             $data = json_decode($msg, true);
-            if (isset($data['message'], $data['from'], $data['to'], $data['time'], $data['sender'])) {
-                $message = $data['message'];
-                $sender = $data['from'];
-                $receiver = $data['to'];
-                $time = $data['time'];
-                $type_sender = $data['sender'];
-                // thêm người dùng nhắn tin vào danh sách nhắn tin
+            // if (isset($data['message'], $data['image'], $data['from'], $data['to'], $data['time'], $data['sender'], $data['type_message'])) {
+            $message = $data['message'];
+            $sender = $data['from'];
+            $receiver = $data['to'];
+            $time = $data['time'];
+            $type_sender = $data['sender'];
+            $type_message = $data['type_message'];
+            if ($data['image'] !== '' && $data['image'] !== null && $data['image'] !== 'underfined') {
+                $base64Image = $data['image'];
 
-                // nếu người dùng không phải admin thì người nhắn vào list_user_chat_to_user
-                if ($data['sender'] !== 'admin') {
-                    $query2 = $this->conn->prepare("select id from list_users_chat_to_admin where id_user=:id_user");
-                    $query2->execute(['id_user' => $sender]);
-                    // nếu không tồn tại kết quả thì thêm người dùng vào
-                    if ($query2->rowCount() < 1) {
-                        $query3 = $this->conn->prepare("insert into list_users_chat_to_admin (id_user) values (:id_user)");
-                        $query3->execute(['id_user' => $sender]);
-                    }
+                // Giải mã Base64
+                $imageMessage = base64_decode(preg_replace('#^data:image/\w+;base64,#i', '', $base64Image));
+            } else {
+                $imageMessage = '';
+            }
+            // thêm người dùng nhắn tin vào danh sách nhắn tin
+            $this->conn->beginTransaction();
+            // nếu người dùng không phải admin thì người nhắn vào list_user_chat_to_user
+            if ($data['sender'] !== 'admin') {
+                $query2 = $this->conn->prepare("select id from list_users_chat_to_admin where id_user=:id_user");
+                $query2->execute(['id_user' => $sender]);
+                // nếu không tồn tại kết quả thì thêm người dùng vào
+                if ($query2->rowCount() < 1) {
+                    $query3 = $this->conn->prepare("insert into list_users_chat_to_admin (id_user) values (:id_user)");
+                    $query3->execute(['id_user' => $sender]);
                 }
-
-                // lưu tin nhắn vào db
-                $query = $this->conn->prepare("INSERT INTO messages (id_sender, id_receiver, type_sender, message, create_at) VALUES (:id_sender, :id_receiver, :type_sender, :message, :date)");
+            }
+            // lưu tin nhắn vào db
+            $query = $this->conn->prepare("INSERT INTO messages (id_sender, id_receiver, type_sender, message, type_message, create_at) VALUES (:id_sender, :id_receiver, :type_sender, :message, :typeMess, :date)");
+            // nếu tin nhắn là ảnh thì lưu ảnh vào cột message
+            if ($message !== '' && $message !== null && $message !== 'underfined') {
                 $query->execute([
                     'id_sender' => $sender,
                     'id_receiver' => $receiver,
                     'type_sender' => $type_sender,
                     'message' => $message,
-                    'date' => $time,
+                    'typeMess' => 'text',
+                    'date' => $time
                 ]);
-                echo ($data['sender']);
+                $type_message = 'text';
+            }
+            // nếu tin nhắn là text thì lưu vào cột message
+            else {
+                // thư mục sẽ lưu ảnh vào
+                $folder = __DIR__ . '/../assets/image/ImageMessage/';
+                if (!is_dir($folder)) {
+                    mkdir($folder, 0777, true);  // Tạo thư mục với quyền ghi đầy đủ
+                }
+                $fileName = time() . '_' . uniqid() . '.' . $this->getImageExtension($imageMessage);
+                file_put_contents($folder . $fileName, $imageMessage);
+                $query->execute([
+                    'id_sender' => $sender,
+                    'id_receiver' => $receiver,
+                    'type_sender' => $type_sender,
+                    'message' => $fileName,
+                    'typeMess' => 'image',
+                    'date' => $time
 
-                // kiểm tra xem đây có phải tin nhắn của admin không
-                if (isset($data['to']) && $data['to'] === 'admin') {
-                    foreach ($this->clients as $client) {
-                        // Gửi tin nhắn đến tất cả các client, ngoại trừ người gửi
-                        if ($client !== $from && $client->resourceId == 8) {
-                            $client->send(json_encode([
-                                'from' => 'user',
-                                'message' => $data['message']
-                                //  thông báo tin nhắn đến admin
+                ]);
+                $message = $fileName;
+                $type_message = 'image';
+            }
+            // echo ($data['sender']);
+            // kiểm tra xem đây có phải tin nhắn của admin không
+            if (isset($data['to']) && $data['to'] === 'admin') {
+                foreach ($this->clients as $client) {
+                    // Gửi tin nhắn đến tất cả các client, ngoại trừ người gửi
+                    if (
+                        $client !== $from && $client->resourceId == 8
+                    ) {
+                        $client->send(json_encode([
+                            'from' => 'user',
+                            'message' => $message,
+                            //  thông báo tin nhắn đến admin
 
-                            ]));
-                        }
-                    }
-                } else {
-                    // Gửi tin nhắn đến tất cả clients ngoại trừ người gửi
-                    foreach ($this->clients as $client) {
-                        if ($from !== $client) {
-                            $client->send($msg);
-                        }
+                        ]));
                     }
                 }
-                $this->conn->commit();
+            } else {
+                // Gửi tin nhắn đến tất cả clients ngoại trừ người gửi
+                foreach ($this->clients as $client) {
+                    if ($from !== $client) {
+                        $client->send($msg);
+                    }
+                }
             }
+            $this->conn->commit();
+            // } else {
+            //     echo false;
+            // }
         } catch (Throwable $e) {
-            $this->conn->rollBack();
-            echo $e;
+            if ($this->conn->inTransaction()) {
+                $this->conn->rollBack();
+            }
+            error_log($e->getMessage());  // Ghi lỗi
+            // throw $e;  // Phát lỗi ra ngoài hoặc xử lý thêm
         }
     }
     public function onClose(ConnectionInterface $conn)

@@ -24,6 +24,7 @@ class ClassModel extends BaseModel
         } catch (Throwable $e) {
             return null;
         }
+        
     }
     public function createClassModel($data)
     {

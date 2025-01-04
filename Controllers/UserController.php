@@ -32,11 +32,23 @@ class UserController
     public function create()
     {
         $data = json_decode(file_get_contents("php://input"), true);
-        // kiểm tra dữ liệu tránh truyền script vào input
-        // foreach ($data as $key => $value) {
-        //     $data[$key] = htmlspecialchars($value, ENT_QUOTES, 'UTF-8');
-        // }
         $this->UserModel->createUser($data);
+    }
+    // active tài khoản khi đăng ký mà không xác thực
+    public function activeAccountController()
+    {
+        $data = json_decode(file_get_contents("php://input"), true);
+        $this->UserModel->activeAccountModel($data);
+    }
+    public function sendOTPToRegister()
+    {
+        $data = json_decode(file_get_contents("php://input"), true);
+        $this->UserModel->sendOTPToRegisterModel($data);
+    }
+    public function updateEmailController($id)
+    {
+        $data = json_decode(file_get_contents("php://input"), true);
+        $this->UserModel->updateEmailModel($data, $id);
     }
     public function update($id)
     {
